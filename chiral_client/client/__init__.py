@@ -95,20 +95,24 @@ class Client:
 
     def submit_job(self, job_req: str, divisor: int) -> str:
         reply = self.stub.AcceptJob(end_user_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
-        return reply
+        if reply.error:
+            raise Exception(f'Submit job error: {reply.error}')
+        else:
+            return reply.job_id
     
     def check_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
         return self.stub.JobStatus(end_user_pb2.RequestJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
     
-    def get_job_outputs(self, job_id: str) -> typing.List[str]:
-        def get_output(s) -> str:
-            if s['error']:
-                print(s)
-                raise Exception(f'Job error {s["error"]}')
-            return s['output']
-        result_str = self.stub.JobResult(end_user_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata).result
-        result = json.loads(result_str)
-        return list(map(get_output, result['results']))
+    def get_job_result(self, job_id: str) -> (typing.List[str], str):
+        reply = self.stub.JobResult(end_user_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
+        if reply.error:
+            return ([], f'Get job result error: {reply.error}')
+        else:
+            job_result = json.loads(reply.job_result)
+            if job_result['error']:
+                return ([], f'Job running error in cloud: {job_result["error"]}')
+            else:
+                return (job_result["outputs"], "")
 
 
 

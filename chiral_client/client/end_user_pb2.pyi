@@ -14,12 +14,12 @@ class ReplyAcceptJob(_message.Message):
     def __init__(self, job_id: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
 
 class ReplyJobResult(_message.Message):
-    __slots__ = ["error", "outputs"]
+    __slots__ = ["error", "job_result"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    OUTPUTS_FIELD_NUMBER: _ClassVar[int]
+    JOB_RESULT_FIELD_NUMBER: _ClassVar[int]
     error: str
-    outputs: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, outputs: _Optional[_Iterable[str]] = ..., error: _Optional[str] = ...) -> None: ...
+    job_result: str
+    def __init__(self, job_result: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
 
 class ReplyJobStatus(_message.Message):
     __slots__ = ["error", "statuses"]

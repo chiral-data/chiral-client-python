@@ -18,32 +18,19 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     job_mgr = chiral_client.GromacsJobManager(simulation_id, 'examples/lysozyme/files', c)
     # upload input files
     job_mgr.upload_files(c, ['1AKI_clean.pdb'])
+    # submit a job
     job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', 'gromacs', ['1AKI_clean.pdb'], ["1AKI_processed.gro", "topol.top", "posre.itp"])
-    print(job_id)
-
-
-    # remote_parent_dir = "python_test/subfolder"
-    # remote_dir = "python_test/subfolder/lysozyme"
-    # if c.is_remote_dir(remote_parent_dir, 'lysozyme'):
-    #     c.remove_remote_dir(remote_parent_dir, 'lysozyme')
-    # c.create_remote_dir(remote_dir)
-    # c.upload_files([("1AKI_clean.pdb", "examples/files/lysozyme", remote_dir)])
-    # # submit jobs
-    # gromacs_job = chiral_client.GromacsJob(client=c)
-    # gromacs_job.set_input('lysozyme', 'pdb2gmx', ["-f", "1AKI_clean.pdb", "-o", "1AKI_processed.gro", "-water", "spce"], ["15 0"], 'python_test/subfolder', ["1AKI_clean.pdb"], ["1AKI_processed.gro", "topol.top", "posre.itp"])
-    # assert gromacs_job.requirement == r'{"ji":"{\"simulation_id\":\"lysozyme\",\"sub_command\":\"pdb2gmx\",\"arguments\":[\"-f\",\"1AKI_clean.pdb\",\"-o\",\"1AKI_processed.gro\",\"-water\",\"spce\"],\"prompts\":[\"15 0\"],\"files_dir\":\"python_test/subfolder\",\"files_input\":[\"1AKI_clean.pdb\"],\"files_output\":[\"1AKI_processed.gro\",\"topol.top\",\"posre.itp\"]}","opk":"GromacsRunGMXCommand","dsk":"Empty"}'
-    # assert gromacs_job.id == None
-    # gromacs_job.submit()
-    # assert len(gromacs_job.id) == 32
-    # assert gromacs_job.status_label == None
-    # gromacs_job.check_status()
-    # assert gromacs_job.status_label == "Processing"
-    # while gromacs_job.status_label == "Processing":
-    #     time.sleep(1.0)
-    #     gromacs_job.check_status()
-    # gromacs_job.get_output()
-    # assert gromacs_job.status_label == 'Completed'
-    # assert gromacs_job.output.success
+    assert len(job_id) > 0
+    job_mgr.wait_until_completion(c, job_id)
+    (output, error) = job_mgr.get_output(c, job_id)
+    assert output['success']
+    assert error == ''
+    # submit a job with wrong input
+    job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', 'gromacs', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
+    job_mgr.wait_until_completion(c, job_id)
+    (output, error) = job_mgr.get_output(c, job_id)
+    assert output == {} 
+    assert error != ''
 
 def create_file(filename: str, local_dir: str):
     with open(f'{local_dir}/{filename}', 'w') as f:
