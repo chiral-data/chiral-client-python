@@ -21,6 +21,7 @@ class Client:
         self.ftp_addr = file_server_addr
         self.ftp_port = file_server_port
         self.ftp_root = None
+        self.connect_file_server()
 
     def connect_file_server(self):
         self.ftp = ftplib.FTP()

@@ -1,3 +1,3 @@
 import typing
 
-TransferFile: typing.TypeAlias = tuple[str, str, str] # filename, local dir, remote dir
+TransferFile: typing.TypeAlias = typing.Tuple[str, str, str] # filename, local dir, remote dir

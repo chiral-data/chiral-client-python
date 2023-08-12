@@ -14,12 +14,12 @@ class Input:
     files_input: typing.List[str]
     files_output: typing.List[str]
 
-    def __init__(self, simulation_id: str, sub_command: str, arguments: typing.List[str], prompts: typing.List[str], files_dir: str, files_input: typing.List[str], files_output: typing.List[str]):
+    def __init__(self, simulation_id: str, sub_command: str, arguments: typing.List[str], prompts: typing.List[str], files_input: typing.List[str], files_output: typing.List[str]):
         self.simulation_id = simulation_id
         self.sub_command = sub_command
         self.arguments = arguments
         self.prompts = prompts
-        self.files_dir = files_dir
+        self.files_dir = 'gromacs' 
         self.files_input = files_input
         self.files_output = files_output
 
@@ -47,8 +47,8 @@ class JobManager:
     def clear_files(self, client: Client):
         client.remove_remote_dir(self.remote_dir)
 
-    def submit_job(self, client: Client, sub_command: str, arguments: str, prompts: str, files_dir: str, files_input: typing.List[str], files_output: typing.List[str]) -> str:
-        input = Input(self.simulation_id, sub_command, arguments.split(' '), prompts.split(' '), files_dir, files_input, files_output)
+    def submit_job(self, client: Client, sub_command: str, arguments: str, prompts: str, files_input: typing.List[str], files_output: typing.List[str]) -> str:
+        input = Input(self.simulation_id, sub_command, arguments.split(' '), prompts.split(' '), files_input, files_output)
         jr = JobRequirement(json.dumps(input.__dict__), OperatorKind.GromacsRunGMXCommand, DatasetKind.Empty)
         return client.submit_job(json.dumps(jr.__dict__), 1)
     

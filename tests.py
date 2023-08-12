@@ -19,14 +19,14 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     # upload input files
     job_mgr.upload_files(c, ['1AKI_clean.pdb'])
     # submit a job
-    job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', 'gromacs', ['1AKI_clean.pdb'], ["1AKI_processed.gro", "topol.top", "posre.itp"])
+    job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', ['1AKI_clean.pdb'], ["1AKI_processed.gro", "topol.top", "posre.itp"])
     assert len(job_id) > 0
     job_mgr.wait_until_completion(c, job_id)
     (output, error) = job_mgr.get_output(c, job_id)
     assert output['success']
     assert error == ''
     # submit a job with wrong input
-    job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', 'gromacs', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
+    job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
     job_mgr.wait_until_completion(c, job_id)
     (output, error) = job_mgr.get_output(c, job_id)
     assert output == {} 
