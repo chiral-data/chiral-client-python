@@ -21,16 +21,33 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     # submit a job
     job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', ['1AKI_clean.pdb'], ["1AKI_processed.gro", "topol.top", "posre.itp"])
     assert len(job_id) > 0
-    job_mgr.wait_until_completion(c, job_id)
+    c.wait_until_completion(job_id)
     (output, error) = job_mgr.get_output(c, job_id)
     assert output['success']
     assert error == ''
     # submit a job with wrong input
     job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
-    job_mgr.wait_until_completion(c, job_id)
+    c.wait_until_completion(job_id)
     (output, error) = job_mgr.get_output(c, job_id)
     assert output == {} 
     assert error != ''
+
+def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+    print("-------------- Testing RecGen Job --------------")
+    job_mgr = chiral_client.RecGenJobManager()
+
+    for (mol_file, result_count) in [
+        ('sample1', 1117), 
+        ('sample4', 33),
+    ]:
+        with open(f'examples/recgen/{mol_file}.mol') as f:
+            input_mol = f.read()
+            f.close()
+        job_id = job_mgr.submit_job(c, input_mol, 3)
+        c.wait_until_completion(job_id)
+        (output, error) = job_mgr.get_output(c, job_id)
+        assert len(output) == result_count
+        assert error == ''
 
 def create_file(filename: str, local_dir: str):
     with open(f'{local_dir}/{filename}', 'w') as f:
@@ -86,4 +103,5 @@ def test_file_transfer(c: chiral_client.client.Client = chiral_client.client.Cli
 
 if __name__ == '__main__':
     test_gromacs()
+    test_recgen()
     # test_file_transfer()

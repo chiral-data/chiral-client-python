@@ -1,6 +1,5 @@
 import typing
 import json
-import time
 from .. import Client
 from ..types import TransferFile
 from . import JobRequirement, OperatorKind, DatasetKind
@@ -51,13 +50,6 @@ class JobManager:
         input = Input(self.simulation_id, sub_command, arguments.split(' '), prompts.split(' '), files_input, files_output)
         jr = JobRequirement(json.dumps(input.__dict__), OperatorKind.GromacsRunGMXCommand, DatasetKind.Empty)
         return client.submit_job(json.dumps(jr.__dict__), 1)
-    
-    def wait_until_completion(self, client: Client, job_id: str):
-        while True:
-            job_statuses = client.check_job_status([job_id])
-            if job_id in job_statuses and job_statuses[job_id] in ['"CompletedSuccess"', '"CompletedError"']:
-                break
-            time.sleep(0.5)
 
     def get_output(self, client: Client, job_id: str) -> (str, str):
         (outputs, error) = client.get_job_result(job_id)

@@ -1,4 +1,5 @@
 import typing
+import time
 import grpc
 import json
 import ftplib
@@ -115,5 +116,10 @@ class Client:
             else:
                 return (job_result["outputs"], "")
 
-
+    def wait_until_completion(self, job_id: str):
+        while True:
+            job_statuses = self.check_job_status([job_id])
+            if job_id in job_statuses and job_statuses[job_id] in ['"CompletedSuccess"', '"CompletedError"']:
+                break
+            time.sleep(0.5)
 
