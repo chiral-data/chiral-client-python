@@ -18,7 +18,7 @@ class JobManager:
     
     def get_output(self, client: Client, job_id: str) -> (typing.List[str], str):
         def map_func(output):
-            return json.loads(output)['results']
+            return json.loads(output)['smiles']
         def reduce_func(vec_1: typing.List[str], vec_2: typing.List[str]):
             for smiles in vec_2:
                 if smiles not in vec_1:
