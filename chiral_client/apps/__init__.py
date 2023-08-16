@@ -3,6 +3,7 @@ from enum import Enum
 class OperatorKind(str, Enum):
     GromacsRunGMXCommand = 'GromacsRunGMXCommand'
     ReCGenBuild = 'ReCGenBuild'
+    CandleLLaMA2 = 'CandleLLaMA2'
 
 class DatasetKind(str, Enum):
     Empty = 'Empty'

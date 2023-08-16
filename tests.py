@@ -1,7 +1,10 @@
-import time
+import sys
 import os
-import json
+import shutil 
 import chiral_client
+
+CURSOR_UP_ONE = '\x1b[1A' 
+ERASE_LINE = '\x1b[2K' 
 
 user_email = 'new_user_2@gmail.com'
 user_token_api = "i7oqcut9lw828uq6xv1cb1kqupllol0u"
@@ -11,11 +14,16 @@ chiral_file_host = '127.0.0.1'
 chiral_file_port = 2121
 
 def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+    test_dir = 'test_gromacs'
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.mkdir(test_dir)
+    shutil.copyfile(f'{os.environ["CHIRAL_DATA_DIR"]}/gromacs/lysozyme/1AKI_clean.pdb', f'{test_dir}/1AKI_clean.pdb')
     print("-------------- Testing Gromacs Job --------------")
     c.connect_file_server()
     simulation_id = 'lysozyme'
     c.remove_remote_dir('gromacs', simulation_id)
-    job_mgr = chiral_client.GromacsJobManager(simulation_id, 'examples/lysozyme/files', c)
+    job_mgr = chiral_client.GromacsJobManager(simulation_id, test_dir, c)
     # upload input files
     job_mgr.upload_files(c, ['1AKI_clean.pdb'])
     # submit a job
@@ -32,16 +40,26 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     (output, error) = job_mgr.get_output(c, job_id)
     assert output == {} 
     assert error != ''
+    sys.stdout.write(CURSOR_UP_ONE) 
+    sys.stdout.write(ERASE_LINE) 
+    print("-------------- Testing Gromacs Job Done --------------")
+    shutil.rmtree(test_dir)
 
 def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
-    print("-------------- Testing RecGen Job --------------")
+    test_dir = 'test_recgen'
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.mkdir(test_dir)
+    for sample in ['sample1', 'sample4']:
+        shutil.copyfile(f'{os.environ["CHIRAL_DATA_DIR"]}/recgen/inputs/{sample}.mol', f'{test_dir}/{sample}.mol')
+    print("-------------- Testing ReCGen Job --------------")
     job_mgr = chiral_client.RecGenJobManager()
 
     for (mol_file, result_count) in [
         ('sample1', 1117), 
         ('sample4', 33),
     ]:
-        with open(f'examples/recgen/{mol_file}.mol') as f:
+        with open(f'{test_dir}/{mol_file}.mol') as f:
             input_mol = f.read()
             f.close()
         job_id = job_mgr.submit_job(c, input_mol, 3)
@@ -49,6 +67,23 @@ def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(use
         (output, error) = job_mgr.get_output(c, job_id)
         assert len(output) == result_count
         assert error == ''
+    sys.stdout.write(CURSOR_UP_ONE) 
+    sys.stdout.write(ERASE_LINE) 
+    print("-------------- Testing ReCGen Job Done --------------")
+    shutil.rmtree(test_dir)
+
+def test_llama2(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+    print("-------------- Testing LLaMA2 Job --------------")
+    job_mgr = chiral_client.Llma2JobManager()
+    job_id = job_mgr.submit_job(c, 0.0, "I am so tired today after work")
+    c.wait_until_completion(job_id)
+    (output, error) = job_mgr.get_output(c, job_id)
+    # print(output['text'])
+    assert len(output['text']) > 0
+    assert error == ''
+    sys.stdout.write(CURSOR_UP_ONE) 
+    sys.stdout.write(ERASE_LINE) 
+    print("-------------- Testing LLaMA2 Job Done --------------")
 
 def create_file(filename: str, local_dir: str):
     with open(f'{local_dir}/{filename}', 'w') as f:
@@ -105,4 +140,5 @@ def test_file_transfer(c: chiral_client.client.Client = chiral_client.client.Cli
 if __name__ == '__main__':
     test_gromacs()
     test_recgen()
+    test_llama2()
     # test_file_transfer()
