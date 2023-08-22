@@ -6,14 +6,14 @@ import chiral_client
 CURSOR_UP_ONE = '\x1b[1A' 
 ERASE_LINE = '\x1b[2K' 
 
-user_email = 'new_user_2@gmail.com'
-user_token_api = "i7oqcut9lw828uq6xv1cb1kqupllol0u"
+user_email = 'new_user@gmail.com'
+user_token_api = "ocgr295kqvtxvxpzjdcgemxf0hda7axpaunwjnl5k4dum1f26tdzlplk01ya38gz"
 chiral_computing_host = 'localhost'
 chiral_computing_port = '20001'
-chiral_file_host = '127.0.0.1' 
-chiral_file_port = 2121
+# chiral_file_host = '127.0.0.1' 
+# chiral_file_port = 2121
 
-def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
     test_dir = 'test_gromacs'
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
@@ -22,7 +22,8 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     print("-------------- Testing Gromacs Job --------------")
     c.connect_file_server()
     simulation_id = 'lysozyme'
-    c.remove_remote_dir('gromacs', simulation_id)
+    if c.is_remote_dir('gromacs', simulation_id):
+        c.remove_remote_dir('gromacs', simulation_id)
     job_mgr = chiral_client.GromacsJobManager(simulation_id, test_dir, c)
     # upload input files
     job_mgr.upload_files(c, ['1AKI_clean.pdb'])
@@ -45,7 +46,7 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     print("-------------- Testing Gromacs Job Done --------------")
     shutil.rmtree(test_dir)
 
-def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
     test_dir = 'test_recgen'
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
@@ -72,7 +73,7 @@ def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(use
     print("-------------- Testing ReCGen Job Done --------------")
     shutil.rmtree(test_dir)
 
-def test_llama2(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+def test_llama2(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
     print("-------------- Testing LLaMA2 Job --------------")
     job_mgr = chiral_client.Llma2JobManager()
     job_id = job_mgr.submit_job(c, 0.0, "I am so tired today after work")
@@ -95,7 +96,7 @@ def remove_file(filename: str, local_dir: str):
     if os.path.exists(full_path):
         os.remove(full_path)
     
-def test_file_transfer(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port, chiral_file_host, chiral_file_port)):
+def test_file_transfer(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
     print("-------------- Testing File Transfer --------------")
     c.connect_file_server()
 

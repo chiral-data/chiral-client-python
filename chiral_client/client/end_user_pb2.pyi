@@ -13,6 +13,18 @@ class ReplyAcceptJob(_message.Message):
     job_id: str
     def __init__(self, job_id: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
 
+class ReplyInitialize(_message.Message):
+    __slots__ = ["error", "ftp_addr", "ftp_port", "user_id"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    FTP_ADDR_FIELD_NUMBER: _ClassVar[int]
+    FTP_PORT_FIELD_NUMBER: _ClassVar[int]
+    USER_ID_FIELD_NUMBER: _ClassVar[int]
+    error: str
+    ftp_addr: str
+    ftp_port: str
+    user_id: str
+    def __init__(self, ftp_addr: _Optional[str] = ..., ftp_port: _Optional[str] = ..., user_id: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
+
 class ReplyJobResult(_message.Message):
     __slots__ = ["error", "job_result"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
@@ -43,6 +55,10 @@ class RequestAcceptJob(_message.Message):
     divisor: int
     requirement: str
     def __init__(self, requirement: _Optional[str] = ..., divisor: _Optional[int] = ...) -> None: ...
+
+class RequestInitialize(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
 
 class RequestJobResult(_message.Message):
     __slots__ = ["job_id"]

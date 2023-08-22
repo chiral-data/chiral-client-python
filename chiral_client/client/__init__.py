@@ -10,25 +10,31 @@ from . import end_user_pb2_grpc
 from ..types import TransferFile
 
 class Client:
-    def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
+    # def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
+    def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str):
         self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}')
         self.stub = end_user_pb2_grpc.ChiralEndUserStub(self.channel)
         self.metadata = (
             ('user_email', email),
             ('token_api', token_api)
         )
-        self.user = email
+        self.user_email = email
         self.token_api = token_api
-        self.ftp_addr = file_server_addr
-        self.ftp_port = file_server_port
-        self.ftp_root = None
-        self.connect_file_server()
+        reply = self.stub.Initialize(end_user_pb2.RequestInitialize(), metadata=self.metadata)
+        if reply.error:
+            raise Exception(f'Client initializing error: {reply.error}')
+        else:
+            self.ftp_addr = reply.ftp_addr 
+            self.ftp_port = int(reply.ftp_port)
+            self.user_id = reply.user_id
+            self.ftp_root = None
+            self.connect_file_server()
 
     def connect_file_server(self):
         self.ftp = ftplib.FTP()
         self.ftp.connect(self.ftp_addr, self.ftp_port)
-        self.ftp.login(self.user, self.token_api)
-        self.ftp.cwd(self.user)
+        self.ftp.login(self.user_email, self.token_api)
+        self.ftp.cwd(self.user_id)
         self.ftp_root = self.ftp.pwd()
 
     def disconnect_file_server(self):

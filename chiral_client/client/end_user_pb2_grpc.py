@@ -14,6 +14,11 @@ class ChiralEndUserStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.Initialize = channel.unary_unary(
+                '/chiral_end_user.ChiralEndUser/Initialize',
+                request_serializer=end__user__pb2.RequestInitialize.SerializeToString,
+                response_deserializer=end__user__pb2.ReplyInitialize.FromString,
+                )
         self.AcceptJob = channel.unary_unary(
                 '/chiral_end_user.ChiralEndUser/AcceptJob',
                 request_serializer=end__user__pb2.RequestAcceptJob.SerializeToString,
@@ -33,6 +38,12 @@ class ChiralEndUserStub(object):
 
 class ChiralEndUserServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def Initialize(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def AcceptJob(self, request, context):
         """accept a submitted job 
@@ -58,6 +69,11 @@ class ChiralEndUserServicer(object):
 
 def add_ChiralEndUserServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'Initialize': grpc.unary_unary_rpc_method_handler(
+                    servicer.Initialize,
+                    request_deserializer=end__user__pb2.RequestInitialize.FromString,
+                    response_serializer=end__user__pb2.ReplyInitialize.SerializeToString,
+            ),
             'AcceptJob': grpc.unary_unary_rpc_method_handler(
                     servicer.AcceptJob,
                     request_deserializer=end__user__pb2.RequestAcceptJob.FromString,
@@ -82,6 +98,23 @@ def add_ChiralEndUserServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class ChiralEndUser(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Initialize(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chiral_end_user.ChiralEndUser/Initialize',
+            end__user__pb2.RequestInitialize.SerializeToString,
+            end__user__pb2.ReplyInitialize.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def AcceptJob(request,
