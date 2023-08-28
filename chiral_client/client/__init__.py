@@ -11,8 +11,8 @@ from ..types import TransferFile
 
 class Client:
     # def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
-    def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str):
-        self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}')
+    def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, options: typing.List[typing.Tuple[str, int]] = None):
+        self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}', options = options)
         self.stub = end_user_pb2_grpc.ChiralEndUserStub(self.channel)
         self.metadata = (
             ('user_email', email),

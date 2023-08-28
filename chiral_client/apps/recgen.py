@@ -5,14 +5,20 @@ from .. import Client
 from . import JobRequirement, OperatorKind, DatasetKind
 
 class Input:
+    db_file: str
     mol: str
 
-    def __init__(self, mol: str):
+    def __init__(self, db_file: str, mol: str):
+        self.db_file = db_file
         self.mol = mol
 
 class JobManager:
-    def submit_job(self, client: Client, mol: str, divisor: int):
-        input = Input(mol)
+    def submit_job(self, client: Client, mol: str):
+        fragment_db = "DrugBank_M.db"
+        # fragment_db = "kegg_drug220912.db"
+        divisor = 40
+        print(f'using fragment db {fragment_db} and divisor {divisor}')
+        input = Input(fragment_db, mol)
         jr = JobRequirement(json.dumps(input.__dict__), OperatorKind.ReCGenBuild, DatasetKind.Empty)
         return client.submit_job(json.dumps(jr.__dict__), divisor)
     
