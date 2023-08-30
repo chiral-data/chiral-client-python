@@ -44,6 +44,7 @@ class Client:
         try:
             self.ftp.cwd(self.ftp_root)
         except Exception:
+            print('reconnecting ...')
             self.connect_file_server()
 
     def upload_files(self, files: typing.List[TransferFile]):
@@ -70,6 +71,7 @@ class Client:
             self.ftp.delete(fn)
 
     def is_remote_file(self, file: TransferFile) -> bool:
+        self.reconnect()
         filename, _, remote_dir = file
         self.ftp.cwd(self.ftp_root)
         self.ftp.cwd(remote_dir)
@@ -80,15 +82,18 @@ class Client:
             return False
         
     def is_remote_dir(self, parent_dir: str, dir: str) -> bool:
+        self.reconnect()
         self.ftp.cwd(self.ftp_root)
         self.ftp.cwd(parent_dir)
         return dir in self.ftp.nlst()
     
     def create_remote_dir(self, dir_name: str):
+        self.reconnect()
         self.ftp.cwd(self.ftp_root)
         self.ftp.mkd(dir_name)
 
     def remove_remote_dir(self, parent_dir: str, dir: str):
+        self.reconnect()
         # will remove all the files inside
         self.ftp.cwd(self.ftp_root)
         self.ftp.cwd(parent_dir)
