@@ -6,14 +6,29 @@ import chiral_client
 CURSOR_UP_ONE = '\x1b[1A' 
 ERASE_LINE = '\x1b[2K' 
 
-user_email = 'new_user@gmail.com'
-user_token_api = "ocgr295kqvtxvxpzjdcgemxf0hda7axpaunwjnl5k4dum1f26tdzlplk01ya38gz"
-chiral_computing_host = 'localhost'
-chiral_computing_port = '20001'
-# chiral_file_host = '127.0.0.1' 
-# chiral_file_port = 2121
+USE_REMOTE = True
 
-def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
+def _create_client_for_local_server() -> chiral_client.client.Client:
+    user_email = 'new_user@gmail.com'
+    user_token_api = "ocgr295kqvtxvxpzjdcgemxf0hda7axpaunwjnl5k4dum1f26tdzlplk01ya38gz"
+    chiral_computing_host = 'localhost'
+    chiral_computing_port = '20001'
+    return chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+
+def _create_client_for_remote_server() -> chiral_client.client.Client:
+    user_email = os.environ['CHIRAL_USER_EMAIL']
+    token_api = os.environ['CHIRAL_TOKEN_API']
+    chiral_computing_host = '133.242.237.70'
+    chiral_computing_port = '20000'
+    return chiral_client.client.Client(user_email, token_api, chiral_computing_host, chiral_computing_port)
+
+def _create_client() -> chiral_client.client.Client:
+    if USE_REMOTE:
+        return _create_client_for_remote_server()
+    else:
+        return _create_client_for_local_server()
+
+def test_gromacs(c: chiral_client.client.Client = _create_client()):
     test_dir = 'test_gromacs'
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
@@ -46,7 +61,7 @@ def test_gromacs(c: chiral_client.client.Client = chiral_client.client.Client(us
     print("-------------- Testing Gromacs Job Done --------------")
     shutil.rmtree(test_dir)
 
-def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
+def test_recgen(c: chiral_client.client.Client = _create_client()): 
     test_dir = 'test_recgen'
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
@@ -63,7 +78,7 @@ def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(use
         with open(f'{test_dir}/{mol_file}.mol') as f:
             input_mol = f.read()
             f.close()
-        job_id = job_mgr.submit_job(c, input_mol, 3)
+        job_id = job_mgr.submit_job(c, input_mol)
         c.wait_until_completion(job_id)
         (output, error) = job_mgr.get_output(c, job_id)
         assert len(output) == result_count
@@ -73,7 +88,7 @@ def test_recgen(c: chiral_client.client.Client = chiral_client.client.Client(use
     print("-------------- Testing ReCGen Job Done --------------")
     shutil.rmtree(test_dir)
 
-def test_llama2(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
+def test_llama2(c: chiral_client.client.Client = _create_client()): 
     print("-------------- Testing LLaMA2 Job --------------")
     job_mgr = chiral_client.Llma2JobManager()
     job_id = job_mgr.submit_job(c, 0.0, "I am so tired today after work")
@@ -96,7 +111,7 @@ def remove_file(filename: str, local_dir: str):
     if os.path.exists(full_path):
         os.remove(full_path)
     
-def test_file_transfer(c: chiral_client.client.Client = chiral_client.client.Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)):
+def test_file_transfer(c: chiral_client.client.Client = _create_client()): 
     print("-------------- Testing File Transfer --------------")
     c.connect_file_server()
 
