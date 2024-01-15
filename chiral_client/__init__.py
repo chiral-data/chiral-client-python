@@ -1,4 +1,4 @@
-version = "0.2.1"
+version = "0.3.0"
 
 from .client import Client as Client
 from .apps.gromacs import JobManager as GromacsJobManager

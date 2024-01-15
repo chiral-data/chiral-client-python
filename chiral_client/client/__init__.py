@@ -5,28 +5,28 @@ import json
 import ftplib
 import pathlib
 
-from . import end_user_pb2
-from . import end_user_pb2_grpc
+from . import chiral_pb2 
+from . import chiral_pb2_grpc 
 from ..types import TransferFile
 
 class Client:
     # def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
     def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, options: typing.List[typing.Tuple[str, int]] = None):
         self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}', options = options)
-        self.stub = end_user_pb2_grpc.ChiralEndUserStub(self.channel)
+        self.stub = chiral_pb2_grpc.ChiralStub(self.channel)
         self.metadata = (
-            ('user_email', email),
-            ('token_api', token_api)
+            ('user_id', email),
+            ('auth_token', token_api)
         )
         self.user_email = email
         self.token_api = token_api
-        reply = self.stub.Initialize(end_user_pb2.RequestInitialize(), metadata=self.metadata)
+        reply = self.stub.UserInitialize(chiral_pb2.RequestUserInitialize(), metadata=self.metadata)
         if reply.error:
-            raise Exception(f'Client initializing error: {reply.error}')
+            raise Exception(f'Client auth error: {reply.error}')
         else:
-            self.ftp_addr = reply.ftp_addr 
-            self.ftp_port = int(reply.ftp_port)
-            self.user_id = reply.user_id
+            self.ftp_addr = reply.settings['ftp_addr'] 
+            self.ftp_port = int(reply.settings['ftp_port'])
+            self.user_id = reply.settings['user_id']
             self.ftp_root = None
             self.connect_file_server()
 
@@ -107,17 +107,17 @@ class Client:
         self.channel.close()
 
     def submit_job(self, job_req: str, divisor: int) -> str:
-        reply = self.stub.AcceptJob(end_user_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
+        reply = self.stub.UserSubmitJob(chiral_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
         if reply.error:
             raise Exception(f'Submit job error: {reply.error}')
         else:
             return reply.job_id
     
     def check_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
-        return self.stub.JobStatus(end_user_pb2.RequestJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
+        return self.stub.JobStatus(chiral_pb2.RequestJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
     
     def get_job_result(self, job_id: str) -> (typing.List[str], str):
-        reply = self.stub.JobResult(end_user_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
+        reply = self.stub.JobResult(chiral_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
         if reply.error:
             return ([], f'Get job result error: {reply.error}')
         else:
