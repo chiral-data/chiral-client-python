@@ -18,22 +18,3 @@ class DatasetKind(str, Enum):
 #         self.ji = input_str
 #         self.opk = opk
 #         self.dsk = dsk
-    
-class CommandLineJob:
-    command: str
-    args: typing.List[str]
-    prompts: typing.List[str]
-    work_dir: str
-    input_files: typing.List[str]
-    output_files: typing.List[str]
-    checkpoint_files: typing.List[str]
-
-class Kind:
-    run: str,
-    app:     
-    
-class Job:
-    id: str
-    is_long: bool
-    kind: str
-

@@ -34,6 +34,11 @@ class ChiralStub(object):
                 request_serializer=chiral__pb2.RequestUserCancelJob.SerializeToString,
                 response_deserializer=chiral__pb2.ReplyUserCancelJob.FromString,
                 )
+        self.UserSubmitAppJob = channel.unary_unary(
+                '/chiral.Chiral/UserSubmitAppJob',
+                request_serializer=chiral__pb2.RequestUserSubmitAppJob.SerializeToString,
+                response_deserializer=chiral__pb2.ReplyUserSubmitAppJob.FromString,
+                )
 
 
 class ChiralServicer(object):
@@ -64,6 +69,12 @@ class ChiralServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UserSubmitAppJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChiralServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -86,6 +97,11 @@ def add_ChiralServicer_to_server(servicer, server):
                     servicer.UserCancelJob,
                     request_deserializer=chiral__pb2.RequestUserCancelJob.FromString,
                     response_serializer=chiral__pb2.ReplyUserCancelJob.SerializeToString,
+            ),
+            'UserSubmitAppJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.UserSubmitAppJob,
+                    request_deserializer=chiral__pb2.RequestUserSubmitAppJob.FromString,
+                    response_serializer=chiral__pb2.ReplyUserSubmitAppJob.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -162,5 +178,22 @@ class Chiral(object):
         return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserCancelJob',
             chiral__pb2.RequestUserCancelJob.SerializeToString,
             chiral__pb2.ReplyUserCancelJob.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UserSubmitAppJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserSubmitAppJob',
+            chiral__pb2.RequestUserSubmitAppJob.SerializeToString,
+            chiral__pb2.ReplyUserSubmitAppJob.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

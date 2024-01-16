@@ -52,8 +52,12 @@ class Client:
         for (fn, local_dir, remote_dir) in files:
             self.ftp.cwd(self.ftp_root)
             self.ftp.cwd(remote_dir)
-            with open(pathlib.Path(local_dir).joinpath(fn), 'rb') as file:
-                self.ftp.storbinary(f'STOR {fn}', file)
+            # if file exists remotely, skip uploading
+            try: 
+                self.ftp.size(fn)
+            except Exception:
+                with open(pathlib.Path(local_dir).joinpath(fn), 'rb') as file:
+                    self.ftp.storbinary(f'STOR {fn}', file)
 
     def download_files(self, files: typing.List[TransferFile]):
         self.reconnect()
@@ -106,31 +110,46 @@ class Client:
     def __del__(self):
         self.channel.close()
 
-    def submit_job(self, job_req: str, divisor: int) -> str:
-        reply = self.stub.UserSubmitJob(chiral_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
-        if reply.error:
-            raise Exception(f'Submit job error: {reply.error}')
-        else:
-            return reply.job_id
-    
+    # def submit_job(self, job_req: str, divisor: int) -> str:
+    #     reply = self.stub.UserSubmitJob(chiral_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
+    #     if reply.error:
+    #         raise Exception(f'Submit job error: {reply.error}')
+    #     else:
+    #         return reply.job_id
+        
+    def cancel_job(self, job_id: str):
+        reply = self.stub.UserCancelJob(chiral_pb2.RequestUserCancelJob(job_id=job_id), metadata=self.metadata)
+        if not reply.success:
+            raise Exception(f'cancel job error: {reply.error}')
+        
     def check_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
-        return self.stub.JobStatus(chiral_pb2.RequestJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
+        return self.stub.UserGetJobStatus(chiral_pb2.RequestUserGetJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
     
-    def get_job_result(self, job_id: str) -> (typing.List[str], str):
-        reply = self.stub.JobResult(chiral_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
-        if reply.error:
-            return ([], f'Get job result error: {reply.error}')
-        else:
-            job_result = json.loads(reply.job_result)
-            if job_result['error']:
-                return ([], f'Job running error in cloud: {job_result["error"]}')
-            else:
-                return (job_result["outputs"], "")
+    # def get_job_result(self, job_id: str) -> (typing.List[str], str):
+    #     reply = self.stub.JobResult(chiral_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
+    #     if reply.error:
+    #         return ([], f'Get job result error: {reply.error}')
+    #     else:
+    #         job_result = json.loads(reply.job_result)
+    #         if job_result['error']:
+    #             return ([], f'Job running error in cloud: {job_result["error"]}')
+    #         else:
+    #             return (job_result["outputs"], "")
 
     def wait_until_completion(self, job_id: str):
         while True:
             job_statuses = self.check_job_status([job_id])
-            if job_id in job_statuses and job_statuses[job_id] in ['"CompletedSuccess"', '"CompletedError"']:
+            if job_id in job_statuses and job_statuses[job_id] in ['"Completed"', '"Cancelled"']:
                 break
             time.sleep(0.5)
+
+    def submit_gromacs_job(self, is_long: bool, args: typing.List[str], prompts: typing.List[str], work_dir: str, input_files: typing.List[str], output_files: typing.List[str], checkpoint_files: typing.List[str]) -> str:
+        job_gromacs = chiral_pb2.JobGromacs(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files) 
+        reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(app_type=chiral_pb2.APP_GROMACS, gromacs=job_gromacs), metadata = self.metadata)
+
+        if reply.success:
+            return reply.job_id
+        else:
+            raise Exception(f'submit gromacs job error: {reply.error}')
+
 
