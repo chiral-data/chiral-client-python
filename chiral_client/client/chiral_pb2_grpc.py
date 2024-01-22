@@ -29,15 +29,20 @@ class ChiralStub(object):
                 request_serializer=chiral__pb2.RequestUserGetJobStatus.SerializeToString,
                 response_deserializer=chiral__pb2.ReplyUserGetJobStatus.FromString,
                 )
-        self.UserCancelJob = channel.unary_unary(
-                '/chiral.Chiral/UserCancelJob',
-                request_serializer=chiral__pb2.RequestUserCancelJob.SerializeToString,
-                response_deserializer=chiral__pb2.ReplyUserCancelJob.FromString,
+        self.UserSendMonitorAction = channel.unary_unary(
+                '/chiral.Chiral/UserSendMonitorAction',
+                request_serializer=chiral__pb2.RequestUserSendMonitorAction.SerializeToString,
+                response_deserializer=chiral__pb2.ReplyUserSendMonitorAction.FromString,
                 )
         self.UserSubmitAppJob = channel.unary_unary(
                 '/chiral.Chiral/UserSubmitAppJob',
                 request_serializer=chiral__pb2.RequestUserSubmitAppJob.SerializeToString,
                 response_deserializer=chiral__pb2.ReplyUserSubmitAppJob.FromString,
+                )
+        self.UserGetCreditPoints = channel.unary_unary(
+                '/chiral.Chiral/UserGetCreditPoints',
+                request_serializer=chiral__pb2.RequestUserGetCreditPoints.SerializeToString,
+                response_deserializer=chiral__pb2.ReplyUserGetCreditPoints.FromString,
                 )
 
 
@@ -45,8 +50,7 @@ class ChiralServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def UserInitialize(self, request, context):
-        """User
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -63,13 +67,19 @@ class ChiralServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def UserCancelJob(self, request, context):
+    def UserSendMonitorAction(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def UserSubmitAppJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UserGetCreditPoints(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -93,15 +103,20 @@ def add_ChiralServicer_to_server(servicer, server):
                     request_deserializer=chiral__pb2.RequestUserGetJobStatus.FromString,
                     response_serializer=chiral__pb2.ReplyUserGetJobStatus.SerializeToString,
             ),
-            'UserCancelJob': grpc.unary_unary_rpc_method_handler(
-                    servicer.UserCancelJob,
-                    request_deserializer=chiral__pb2.RequestUserCancelJob.FromString,
-                    response_serializer=chiral__pb2.ReplyUserCancelJob.SerializeToString,
+            'UserSendMonitorAction': grpc.unary_unary_rpc_method_handler(
+                    servicer.UserSendMonitorAction,
+                    request_deserializer=chiral__pb2.RequestUserSendMonitorAction.FromString,
+                    response_serializer=chiral__pb2.ReplyUserSendMonitorAction.SerializeToString,
             ),
             'UserSubmitAppJob': grpc.unary_unary_rpc_method_handler(
                     servicer.UserSubmitAppJob,
                     request_deserializer=chiral__pb2.RequestUserSubmitAppJob.FromString,
                     response_serializer=chiral__pb2.ReplyUserSubmitAppJob.SerializeToString,
+            ),
+            'UserGetCreditPoints': grpc.unary_unary_rpc_method_handler(
+                    servicer.UserGetCreditPoints,
+                    request_deserializer=chiral__pb2.RequestUserGetCreditPoints.FromString,
+                    response_serializer=chiral__pb2.ReplyUserGetCreditPoints.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -165,7 +180,7 @@ class Chiral(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def UserCancelJob(request,
+    def UserSendMonitorAction(request,
             target,
             options=(),
             channel_credentials=None,
@@ -175,9 +190,9 @@ class Chiral(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserCancelJob',
-            chiral__pb2.RequestUserCancelJob.SerializeToString,
-            chiral__pb2.ReplyUserCancelJob.FromString,
+        return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserSendMonitorAction',
+            chiral__pb2.RequestUserSendMonitorAction.SerializeToString,
+            chiral__pb2.ReplyUserSendMonitorAction.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -195,5 +210,22 @@ class Chiral(object):
         return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserSubmitAppJob',
             chiral__pb2.RequestUserSubmitAppJob.SerializeToString,
             chiral__pb2.ReplyUserSubmitAppJob.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UserGetCreditPoints(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/chiral.Chiral/UserGetCreditPoints',
+            chiral__pb2.RequestUserGetCreditPoints.SerializeToString,
+            chiral__pb2.ReplyUserGetCreditPoints.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

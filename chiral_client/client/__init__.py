@@ -1,7 +1,6 @@
 import typing
 import time
 import grpc
-import json
 import ftplib
 import pathlib
 
@@ -118,7 +117,12 @@ class Client:
     #         return reply.job_id
         
     def cancel_job(self, job_id: str):
-        reply = self.stub.UserCancelJob(chiral_pb2.RequestUserCancelJob(job_id=job_id), metadata=self.metadata)
+        reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_CANCEL), metadata=self.metadata)
+        if not reply.success:
+            raise Exception(f'cancel job error: {reply.error}')
+
+    def request_log_files(self, job_id: str):
+        reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_GET_DETAILS), metadata=self.metadata)
         if not reply.success:
             raise Exception(f'cancel job error: {reply.error}')
         
@@ -143,8 +147,8 @@ class Client:
                 break
             time.sleep(0.5)
 
-    def submit_gromacs_job(self, is_long: bool, args: typing.List[str], prompts: typing.List[str], work_dir: str, input_files: typing.List[str], output_files: typing.List[str], checkpoint_files: typing.List[str]) -> str:
-        job_gromacs = chiral_pb2.JobGromacs(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files) 
+    def submit_gromacs_job(self, is_long: bool, args: typing.List[str], prompts: typing.List[str], work_dir: str, input_files: typing.List[str], output_files: typing.List[str], checkpoint_files: typing.List[str], log_files: typing.List[str]) -> str:
+        job_gromacs = chiral_pb2.JobGromacs(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files) 
         reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(app_type=chiral_pb2.APP_GROMACS, gromacs=job_gromacs), metadata = self.metadata)
 
         if reply.success:

@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63hiral.proto\x12\x06\x63hiral\"\x17\n\x15RequestUserInitialize\"\xa3\x01\n\x13ReplyUserInitialize\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12;\n\x08settings\x18\x03 \x03(\x0b\x32).chiral.ReplyUserInitialize.SettingsEntry\x1a/\n\rSettingsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\'\n\x14RequestUserSubmitJob\x12\x0f\n\x07job_ser\x18\x01 \x01(\t\"4\n\x12ReplyUserSubmitJob\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"&\n\x14RequestUserCancelJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"4\n\x12ReplyUserCancelJob\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"*\n\x17RequestUserGetJobStatus\x12\x0f\n\x07job_ids\x18\x01 \x03(\t\"\xa7\x01\n\x15ReplyUserGetJobStatus\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12=\n\x08statuses\x18\x03 \x03(\x0b\x32+.chiral.ReplyUserGetJobStatus.StatusesEntry\x1a/\n\rStatusesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"j\n\x17RequestUserSubmitAppJob\x12!\n\x08\x61pp_type\x18\x01 \x01(\x0e\x32\x0f.chiral.AppType\x12%\n\x07gromacs\x18\x02 \x01(\x0b\x32\x12.chiral.JobGromacsH\x00\x42\x05\n\x03\x61pp\"G\n\x15ReplyUserSubmitAppJob\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12\x0e\n\x06job_id\x18\x03 \x01(\t\"\x93\x01\n\nJobGromacs\x12\x0f\n\x07is_long\x18\x01 \x01(\x08\x12\x0c\n\x04\x61rgs\x18\x02 \x03(\t\x12\x0f\n\x07prompts\x18\x03 \x03(\t\x12\x10\n\x08work_dir\x18\x04 \x01(\t\x12\x13\n\x0binput_files\x18\x05 \x03(\t\x12\x14\n\x0coutput_files\x18\x06 \x03(\t\x12\x18\n\x10\x63heckpoint_files\x18\x07 \x03(\t*/\n\x07\x41ppType\x12\x13\n\x0f\x41PP_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x41PP_GROMACS\x10\x01\x32\x9e\x03\n\x06\x43hiral\x12N\n\x0eUserInitialize\x12\x1d.chiral.RequestUserInitialize\x1a\x1b.chiral.ReplyUserInitialize\"\x00\x12K\n\rUserSubmitJob\x12\x1c.chiral.RequestUserSubmitJob\x1a\x1a.chiral.ReplyUserSubmitJob\"\x00\x12T\n\x10UserGetJobStatus\x12\x1f.chiral.RequestUserGetJobStatus\x1a\x1d.chiral.ReplyUserGetJobStatus\"\x00\x12K\n\rUserCancelJob\x12\x1c.chiral.RequestUserCancelJob\x1a\x1a.chiral.ReplyUserCancelJob\"\x00\x12T\n\x10UserSubmitAppJob\x12\x1f.chiral.RequestUserSubmitAppJob\x1a\x1d.chiral.ReplyUserSubmitAppJob\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63hiral.proto\x12\x06\x63hiral\"\xa6\x01\n\nJobGromacs\x12\x0f\n\x07is_long\x18\x01 \x01(\x08\x12\x0c\n\x04\x61rgs\x18\x02 \x03(\t\x12\x0f\n\x07prompts\x18\x03 \x03(\t\x12\x10\n\x08work_dir\x18\x04 \x01(\t\x12\x13\n\x0binput_files\x18\x05 \x03(\t\x12\x14\n\x0coutput_files\x18\x06 \x03(\t\x12\x18\n\x10\x63heckpoint_files\x18\x07 \x03(\t\x12\x11\n\tlog_files\x18\x08 \x03(\t\"\x17\n\x15RequestUserInitialize\"\xa3\x01\n\x13ReplyUserInitialize\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12;\n\x08settings\x18\x03 \x03(\x0b\x32).chiral.ReplyUserInitialize.SettingsEntry\x1a/\n\rSettingsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\'\n\x14RequestUserSubmitJob\x12\x0f\n\x07job_ser\x18\x01 \x01(\t\"4\n\x12ReplyUserSubmitJob\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"^\n\x1cRequestUserSendMonitorAction\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12.\n\x0b\x61\x63tion_type\x18\x02 \x01(\x0e\x32\x19.chiral.MonitorActionType\"<\n\x1aReplyUserSendMonitorAction\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"*\n\x17RequestUserGetJobStatus\x12\x0f\n\x07job_ids\x18\x01 \x03(\t\"\xa7\x01\n\x15ReplyUserGetJobStatus\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12=\n\x08statuses\x18\x03 \x03(\x0b\x32+.chiral.ReplyUserGetJobStatus.StatusesEntry\x1a/\n\rStatusesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"j\n\x17RequestUserSubmitAppJob\x12!\n\x08\x61pp_type\x18\x01 \x01(\x0e\x32\x0f.chiral.AppType\x12%\n\x07gromacs\x18\x02 \x01(\x0b\x32\x12.chiral.JobGromacsH\x00\x42\x05\n\x03\x61pp\"G\n\x15ReplyUserSubmitAppJob\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12\x0e\n\x06job_id\x18\x03 \x01(\t\"\x1c\n\x1aRequestUserGetCreditPoints\"J\n\x18ReplyUserGetCreditPoints\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12\x0e\n\x06points\x18\x03 \x01(\x02*/\n\x07\x41ppType\x12\x13\n\x0f\x41PP_UNSPECIFIED\x10\x00\x12\x0f\n\x0b\x41PP_GROMACS\x10\x01*F\n\x11MonitorActionType\x12\x0c\n\x08MAT_NONE\x10\x00\x12\x0e\n\nMAT_CANCEL\x10\x01\x12\x13\n\x0fMAT_GET_DETAILS\x10\x02\x32\x95\x04\n\x06\x43hiral\x12N\n\x0eUserInitialize\x12\x1d.chiral.RequestUserInitialize\x1a\x1b.chiral.ReplyUserInitialize\"\x00\x12K\n\rUserSubmitJob\x12\x1c.chiral.RequestUserSubmitJob\x1a\x1a.chiral.ReplyUserSubmitJob\"\x00\x12T\n\x10UserGetJobStatus\x12\x1f.chiral.RequestUserGetJobStatus\x1a\x1d.chiral.ReplyUserGetJobStatus\"\x00\x12\x63\n\x15UserSendMonitorAction\x12$.chiral.RequestUserSendMonitorAction\x1a\".chiral.ReplyUserSendMonitorAction\"\x00\x12T\n\x10UserSubmitAppJob\x12\x1f.chiral.RequestUserSubmitAppJob\x1a\x1d.chiral.ReplyUserSubmitAppJob\"\x00\x12]\n\x13UserGetCreditPoints\x12\".chiral.RequestUserGetCreditPoints\x1a .chiral.ReplyUserGetCreditPoints\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'chiral_pb2', globals())
@@ -24,34 +24,40 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _REPLYUSERINITIALIZE_SETTINGSENTRY._serialized_options = b'8\001'
   _REPLYUSERGETJOBSTATUS_STATUSESENTRY._options = None
   _REPLYUSERGETJOBSTATUS_STATUSESENTRY._serialized_options = b'8\001'
-  _APPTYPE._serialized_start=949
-  _APPTYPE._serialized_end=996
-  _REQUESTUSERINITIALIZE._serialized_start=24
-  _REQUESTUSERINITIALIZE._serialized_end=47
-  _REPLYUSERINITIALIZE._serialized_start=50
-  _REPLYUSERINITIALIZE._serialized_end=213
-  _REPLYUSERINITIALIZE_SETTINGSENTRY._serialized_start=166
-  _REPLYUSERINITIALIZE_SETTINGSENTRY._serialized_end=213
-  _REQUESTUSERSUBMITJOB._serialized_start=215
-  _REQUESTUSERSUBMITJOB._serialized_end=254
-  _REPLYUSERSUBMITJOB._serialized_start=256
-  _REPLYUSERSUBMITJOB._serialized_end=308
-  _REQUESTUSERCANCELJOB._serialized_start=310
-  _REQUESTUSERCANCELJOB._serialized_end=348
-  _REPLYUSERCANCELJOB._serialized_start=350
-  _REPLYUSERCANCELJOB._serialized_end=402
-  _REQUESTUSERGETJOBSTATUS._serialized_start=404
-  _REQUESTUSERGETJOBSTATUS._serialized_end=446
-  _REPLYUSERGETJOBSTATUS._serialized_start=449
-  _REPLYUSERGETJOBSTATUS._serialized_end=616
-  _REPLYUSERGETJOBSTATUS_STATUSESENTRY._serialized_start=569
-  _REPLYUSERGETJOBSTATUS_STATUSESENTRY._serialized_end=616
-  _REQUESTUSERSUBMITAPPJOB._serialized_start=618
-  _REQUESTUSERSUBMITAPPJOB._serialized_end=724
-  _REPLYUSERSUBMITAPPJOB._serialized_start=726
-  _REPLYUSERSUBMITAPPJOB._serialized_end=797
-  _JOBGROMACS._serialized_start=800
-  _JOBGROMACS._serialized_end=947
-  _CHIRAL._serialized_start=999
-  _CHIRAL._serialized_end=1413
+  _APPTYPE._serialized_start=1138
+  _APPTYPE._serialized_end=1185
+  _MONITORACTIONTYPE._serialized_start=1187
+  _MONITORACTIONTYPE._serialized_end=1257
+  _JOBGROMACS._serialized_start=25
+  _JOBGROMACS._serialized_end=191
+  _REQUESTUSERINITIALIZE._serialized_start=193
+  _REQUESTUSERINITIALIZE._serialized_end=216
+  _REPLYUSERINITIALIZE._serialized_start=219
+  _REPLYUSERINITIALIZE._serialized_end=382
+  _REPLYUSERINITIALIZE_SETTINGSENTRY._serialized_start=335
+  _REPLYUSERINITIALIZE_SETTINGSENTRY._serialized_end=382
+  _REQUESTUSERSUBMITJOB._serialized_start=384
+  _REQUESTUSERSUBMITJOB._serialized_end=423
+  _REPLYUSERSUBMITJOB._serialized_start=425
+  _REPLYUSERSUBMITJOB._serialized_end=477
+  _REQUESTUSERSENDMONITORACTION._serialized_start=479
+  _REQUESTUSERSENDMONITORACTION._serialized_end=573
+  _REPLYUSERSENDMONITORACTION._serialized_start=575
+  _REPLYUSERSENDMONITORACTION._serialized_end=635
+  _REQUESTUSERGETJOBSTATUS._serialized_start=637
+  _REQUESTUSERGETJOBSTATUS._serialized_end=679
+  _REPLYUSERGETJOBSTATUS._serialized_start=682
+  _REPLYUSERGETJOBSTATUS._serialized_end=849
+  _REPLYUSERGETJOBSTATUS_STATUSESENTRY._serialized_start=802
+  _REPLYUSERGETJOBSTATUS_STATUSESENTRY._serialized_end=849
+  _REQUESTUSERSUBMITAPPJOB._serialized_start=851
+  _REQUESTUSERSUBMITAPPJOB._serialized_end=957
+  _REPLYUSERSUBMITAPPJOB._serialized_start=959
+  _REPLYUSERSUBMITAPPJOB._serialized_end=1030
+  _REQUESTUSERGETCREDITPOINTS._serialized_start=1032
+  _REQUESTUSERGETCREDITPOINTS._serialized_end=1060
+  _REPLYUSERGETCREDITPOINTS._serialized_start=1062
+  _REPLYUSERGETCREDITPOINTS._serialized_end=1136
+  _CHIRAL._serialized_start=1260
+  _CHIRAL._serialized_end=1793
 # @@protoc_insertion_point(module_scope)

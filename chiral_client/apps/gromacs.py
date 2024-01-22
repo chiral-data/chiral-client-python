@@ -47,8 +47,8 @@ class JobManager:
             client.remove_remote_dir('.', self.simulation_id)
         client.create_remote_dir(self.remote_dir)
 
-    def submit_job(self, client: Client, work_dir: str, is_long: bool, arguments: str, prompts: str, files_input: typing.List[str], files_output: typing.List[str], files_checkpoint: typing.List[str]) -> str:
-        return client.submit_gromacs_job(is_long, arguments.split(' '), prompts.split(' '), work_dir, files_input, files_output, files_checkpoint)
+    def submit_job(self, client: Client, work_dir: str, is_long: bool, arguments: str, prompts: str, files_input: typing.List[str], files_output: typing.List[str], files_checkpoint: typing.List[str], files_log: typing.List[str]) -> str:
+        return client.submit_gromacs_job(is_long, arguments.split(' '), prompts.split(' '), work_dir, files_input, files_output, files_checkpoint, files_log)
 
         # input = Input(self.simulation_id, sub_command, arguments.split(' '), prompts.split(' '), files_input, files_output)
         # jr = JobRequirement(json.dumps(input.__dict__), OperatorKind.GromacsRunGMXCommand, DatasetKind.Empty)

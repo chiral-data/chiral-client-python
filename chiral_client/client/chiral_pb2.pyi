@@ -7,13 +7,17 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 APP_GROMACS: AppType
 APP_UNSPECIFIED: AppType
 DESCRIPTOR: _descriptor.FileDescriptor
+MAT_CANCEL: MonitorActionType
+MAT_GET_DETAILS: MonitorActionType
+MAT_NONE: MonitorActionType
 
 class JobGromacs(_message.Message):
-    __slots__ = ["args", "checkpoint_files", "input_files", "is_long", "output_files", "prompts", "work_dir"]
+    __slots__ = ["args", "checkpoint_files", "input_files", "is_long", "log_files", "output_files", "prompts", "work_dir"]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     CHECKPOINT_FILES_FIELD_NUMBER: _ClassVar[int]
     INPUT_FILES_FIELD_NUMBER: _ClassVar[int]
     IS_LONG_FIELD_NUMBER: _ClassVar[int]
+    LOG_FILES_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FILES_FIELD_NUMBER: _ClassVar[int]
     PROMPTS_FIELD_NUMBER: _ClassVar[int]
     WORK_DIR_FIELD_NUMBER: _ClassVar[int]
@@ -21,18 +25,21 @@ class JobGromacs(_message.Message):
     checkpoint_files: _containers.RepeatedScalarFieldContainer[str]
     input_files: _containers.RepeatedScalarFieldContainer[str]
     is_long: bool
+    log_files: _containers.RepeatedScalarFieldContainer[str]
     output_files: _containers.RepeatedScalarFieldContainer[str]
     prompts: _containers.RepeatedScalarFieldContainer[str]
     work_dir: str
-    def __init__(self, is_long: bool = ..., args: _Optional[_Iterable[str]] = ..., prompts: _Optional[_Iterable[str]] = ..., work_dir: _Optional[str] = ..., input_files: _Optional[_Iterable[str]] = ..., output_files: _Optional[_Iterable[str]] = ..., checkpoint_files: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, is_long: bool = ..., args: _Optional[_Iterable[str]] = ..., prompts: _Optional[_Iterable[str]] = ..., work_dir: _Optional[str] = ..., input_files: _Optional[_Iterable[str]] = ..., output_files: _Optional[_Iterable[str]] = ..., checkpoint_files: _Optional[_Iterable[str]] = ..., log_files: _Optional[_Iterable[str]] = ...) -> None: ...
 
-class ReplyUserCancelJob(_message.Message):
-    __slots__ = ["error", "success"]
+class ReplyUserGetCreditPoints(_message.Message):
+    __slots__ = ["error", "points", "success"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
+    POINTS_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
     error: str
+    points: float
     success: bool
-    def __init__(self, success: bool = ..., error: _Optional[str] = ...) -> None: ...
+    def __init__(self, success: bool = ..., error: _Optional[str] = ..., points: _Optional[float] = ...) -> None: ...
 
 class ReplyUserGetJobStatus(_message.Message):
     __slots__ = ["error", "statuses", "success"]
@@ -68,6 +75,14 @@ class ReplyUserInitialize(_message.Message):
     success: bool
     def __init__(self, success: bool = ..., error: _Optional[str] = ..., settings: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
+class ReplyUserSendMonitorAction(_message.Message):
+    __slots__ = ["error", "success"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    error: str
+    success: bool
+    def __init__(self, success: bool = ..., error: _Optional[str] = ...) -> None: ...
+
 class ReplyUserSubmitAppJob(_message.Message):
     __slots__ = ["error", "job_id", "success"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
@@ -86,11 +101,9 @@ class ReplyUserSubmitJob(_message.Message):
     success: bool
     def __init__(self, success: bool = ..., error: _Optional[str] = ...) -> None: ...
 
-class RequestUserCancelJob(_message.Message):
-    __slots__ = ["job_id"]
-    JOB_ID_FIELD_NUMBER: _ClassVar[int]
-    job_id: str
-    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+class RequestUserGetCreditPoints(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
 
 class RequestUserGetJobStatus(_message.Message):
     __slots__ = ["job_ids"]
@@ -101,6 +114,14 @@ class RequestUserGetJobStatus(_message.Message):
 class RequestUserInitialize(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
+
+class RequestUserSendMonitorAction(_message.Message):
+    __slots__ = ["action_type", "job_id"]
+    ACTION_TYPE_FIELD_NUMBER: _ClassVar[int]
+    JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    action_type: MonitorActionType
+    job_id: str
+    def __init__(self, job_id: _Optional[str] = ..., action_type: _Optional[_Union[MonitorActionType, str]] = ...) -> None: ...
 
 class RequestUserSubmitAppJob(_message.Message):
     __slots__ = ["app_type", "gromacs"]
@@ -117,4 +138,7 @@ class RequestUserSubmitJob(_message.Message):
     def __init__(self, job_ser: _Optional[str] = ...) -> None: ...
 
 class AppType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = []
+
+class MonitorActionType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = []
