@@ -7,11 +7,15 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 APP_GROMACS: AppType
 APP_UNSPECIFIED: AppType
 DESCRIPTOR: _descriptor.FileDescriptor
+MAR_JOB_NOT_PROCESSING: MonitorActionReply
+MAR_NONE: MonitorActionReply
+MAR_SUCCESS: MonitorActionReply
 MAT_CANCEL: MonitorActionType
 MAT_GET_DETAILS: MonitorActionType
 MAT_NONE: MonitorActionType
+MAT_TO_QUIT: MonitorActionType
 
-class JobGromacs(_message.Message):
+class JobCommand(_message.Message):
     __slots__ = ["args", "checkpoint_files", "input_files", "is_long", "log_files", "output_files", "prompts", "work_dir"]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     CHECKPOINT_FILES_FIELD_NUMBER: _ClassVar[int]
@@ -30,6 +34,16 @@ class JobGromacs(_message.Message):
     prompts: _containers.RepeatedScalarFieldContainer[str]
     work_dir: str
     def __init__(self, is_long: bool = ..., args: _Optional[_Iterable[str]] = ..., prompts: _Optional[_Iterable[str]] = ..., work_dir: _Optional[str] = ..., input_files: _Optional[_Iterable[str]] = ..., output_files: _Optional[_Iterable[str]] = ..., checkpoint_files: _Optional[_Iterable[str]] = ..., log_files: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class JobScript(_message.Message):
+    __slots__ = ["apps", "command", "script_file"]
+    APPS_FIELD_NUMBER: _ClassVar[int]
+    COMMAND_FIELD_NUMBER: _ClassVar[int]
+    SCRIPT_FILE_FIELD_NUMBER: _ClassVar[int]
+    apps: _containers.RepeatedScalarFieldContainer[AppType]
+    command: JobCommand
+    script_file: str
+    def __init__(self, command: _Optional[_Union[JobCommand, _Mapping]] = ..., script_file: _Optional[str] = ..., apps: _Optional[_Iterable[_Union[AppType, str]]] = ...) -> None: ...
 
 class ReplyUserGetCreditPoints(_message.Message):
     __slots__ = ["error", "points", "success"]
@@ -76,12 +90,14 @@ class ReplyUserInitialize(_message.Message):
     def __init__(self, success: bool = ..., error: _Optional[str] = ..., settings: _Optional[_Mapping[str, str]] = ...) -> None: ...
 
 class ReplyUserSendMonitorAction(_message.Message):
-    __slots__ = ["error", "success"]
+    __slots__ = ["error", "reply", "success"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
+    REPLY_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
     error: str
+    reply: MonitorActionReply
     success: bool
-    def __init__(self, success: bool = ..., error: _Optional[str] = ...) -> None: ...
+    def __init__(self, success: bool = ..., error: _Optional[str] = ..., reply: _Optional[_Union[MonitorActionReply, str]] = ...) -> None: ...
 
 class ReplyUserSubmitAppJob(_message.Message):
     __slots__ = ["error", "job_id", "success"]
@@ -124,12 +140,12 @@ class RequestUserSendMonitorAction(_message.Message):
     def __init__(self, job_id: _Optional[str] = ..., action_type: _Optional[_Union[MonitorActionType, str]] = ...) -> None: ...
 
 class RequestUserSubmitAppJob(_message.Message):
-    __slots__ = ["app_type", "gromacs"]
-    APP_TYPE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["gromacs", "script"]
     GROMACS_FIELD_NUMBER: _ClassVar[int]
-    app_type: AppType
-    gromacs: JobGromacs
-    def __init__(self, app_type: _Optional[_Union[AppType, str]] = ..., gromacs: _Optional[_Union[JobGromacs, _Mapping]] = ...) -> None: ...
+    SCRIPT_FIELD_NUMBER: _ClassVar[int]
+    gromacs: JobCommand
+    script: JobScript
+    def __init__(self, script: _Optional[_Union[JobScript, _Mapping]] = ..., gromacs: _Optional[_Union[JobCommand, _Mapping]] = ...) -> None: ...
 
 class RequestUserSubmitJob(_message.Message):
     __slots__ = ["job_ser"]
@@ -141,4 +157,7 @@ class AppType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = []
 
 class MonitorActionType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = []
+
+class MonitorActionReply(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = []

@@ -4,30 +4,30 @@ from .. import Client
 from ..types import TransferFile
 # from . import JobRequirement, OperatorKind, DatasetKind
 
-class Input:
-    simulation_id: str
-    sub_command: str
-    arguments: typing.List[str]
-    prompts: typing.List[str]
-    files_dir: str 
-    files_input: typing.List[str]
-    files_output: typing.List[str]
+# class Input:
+#     simulation_id: str
+#     sub_command: str
+#     arguments: typing.List[str]
+#     prompts: typing.List[str]
+#     files_dir: str 
+#     files_input: typing.List[str]
+#     files_output: typing.List[str]
 
-    def __init__(self, simulation_id: str, sub_command: str, arguments: typing.List[str], prompts: typing.List[str], files_input: typing.List[str], files_output: typing.List[str]):
-        self.simulation_id = simulation_id
-        self.sub_command = sub_command
-        self.arguments = arguments
-        self.prompts = prompts
-        self.files_dir = 'gromacs' 
-        self.files_input = files_input
-        self.files_output = files_output
+#     def __init__(self, simulation_id: str, sub_command: str, arguments: typing.List[str], prompts: typing.List[str], files_input: typing.List[str], files_output: typing.List[str]):
+#         self.simulation_id = simulation_id
+#         self.sub_command = sub_command
+#         self.arguments = arguments
+#         self.prompts = prompts
+#         self.files_dir = 'gromacs' 
+#         self.files_input = files_input
+#         self.files_output = files_output
 
 class JobManager:
     simulation_id: str
     local_dir: str
     remote_dir: str
 
-    def __init__(self, simulation_id: str, local_dir: str, client: Client) -> None:
+    def __init__(self, client:Client, simulation_id: str, local_dir: str) -> None:
         self.simulation_id = simulation_id
         self.local_dir = local_dir 
         self.remote_dir = f'{simulation_id}'

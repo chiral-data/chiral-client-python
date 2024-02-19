@@ -2,7 +2,7 @@
 
 # Versions
 - 0.3.0: for chiral service V2
-- 0.2.1: ReCGen for virtual molecular library; Large language model LLama2 from Meta; 
+- 0.2.1: ReCGen for virtual molecular library; Large language model LLama2 from Meta;
 - 0.1.0: gromacs
 
 # Requirements for Running Examples
