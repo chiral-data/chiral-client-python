@@ -16,13 +16,14 @@ MAT_NONE: MonitorActionType
 MAT_TO_QUIT: MonitorActionType
 
 class JobCommand(_message.Message):
-    __slots__ = ["args", "checkpoint_files", "input_files", "is_long", "log_files", "output_files", "prompts", "work_dir"]
+    __slots__ = ["args", "checkpoint_files", "input_files", "is_long", "log_files", "output_files", "proj_name", "prompts", "work_dir"]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     CHECKPOINT_FILES_FIELD_NUMBER: _ClassVar[int]
     INPUT_FILES_FIELD_NUMBER: _ClassVar[int]
     IS_LONG_FIELD_NUMBER: _ClassVar[int]
     LOG_FILES_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FILES_FIELD_NUMBER: _ClassVar[int]
+    PROJ_NAME_FIELD_NUMBER: _ClassVar[int]
     PROMPTS_FIELD_NUMBER: _ClassVar[int]
     WORK_DIR_FIELD_NUMBER: _ClassVar[int]
     args: _containers.RepeatedScalarFieldContainer[str]
@@ -31,9 +32,10 @@ class JobCommand(_message.Message):
     is_long: bool
     log_files: _containers.RepeatedScalarFieldContainer[str]
     output_files: _containers.RepeatedScalarFieldContainer[str]
+    proj_name: str
     prompts: _containers.RepeatedScalarFieldContainer[str]
     work_dir: str
-    def __init__(self, is_long: bool = ..., args: _Optional[_Iterable[str]] = ..., prompts: _Optional[_Iterable[str]] = ..., work_dir: _Optional[str] = ..., input_files: _Optional[_Iterable[str]] = ..., output_files: _Optional[_Iterable[str]] = ..., checkpoint_files: _Optional[_Iterable[str]] = ..., log_files: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, work_dir: _Optional[str] = ..., proj_name: _Optional[str] = ..., is_long: bool = ..., args: _Optional[_Iterable[str]] = ..., prompts: _Optional[_Iterable[str]] = ..., input_files: _Optional[_Iterable[str]] = ..., output_files: _Optional[_Iterable[str]] = ..., checkpoint_files: _Optional[_Iterable[str]] = ..., log_files: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class JobScript(_message.Message):
     __slots__ = ["apps", "command", "script_file"]

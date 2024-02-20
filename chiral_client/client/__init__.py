@@ -46,18 +46,18 @@ class ChiralClient:
 
     def submit_job_shell_scripts(self,
         work_dir: str,
+        proj_name: str,
         script_file: str,
         apps: typing.List[chiral_pb2.AppType],
-        args: typing.List[str],
         prompts: typing.List[str],
         input_files: typing.List[str],
         output_files: typing.List[str],
         checkpoint_files: typing.List[str],
         log_files: typing.List[str]
     ) -> str:
-        job_command = chiral_pb2.JobCommand(is_long=True, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
+        job_command = chiral_pb2.JobCommand(work_dir=work_dir, proj_name=proj_name, is_long=True, args=[script_file], prompts=prompts, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
         job_scripts = chiral_pb2.JobScript(command=job_command, script_file=script_file, apps=apps)
-        request = chiral_pb2.RequestUserSubmitAppJob(job_scripts)
+        request = chiral_pb2.RequestUserSubmitAppJob(script=job_scripts)
         reply = self.stub.UserSubmitAppJob(request, metadata = self.metadata)
 
         if reply.success:
@@ -66,15 +66,16 @@ class ChiralClient:
             raise Exception(f'submit shell scripts job error: {reply.error}')
 
     def submit_gromacs_job(self, is_long: bool,
+        work_dir: str,
+        proj_name: str,
         args: typing.List[str],
         prompts: typing.List[str],
-        work_dir: str,
         input_files: typing.List[str],
         output_files: typing.List[str],
         checkpoint_files: typing.List[str],
         log_files: typing.List[str]
     ) -> str:
-        job_gromacs = chiral_pb2.JobCommand(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
+        job_gromacs = chiral_pb2.JobCommand(work_dir=work_dir, proj_name=proj_name, is_long=is_long, args=args, prompts=prompts, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
         reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(gromacs=job_gromacs), metadata = self.metadata)
 
         if reply.success:
