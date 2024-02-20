@@ -1,14 +1,14 @@
 import typing
 import time
 import grpc
-import ftplib
 import pathlib
+from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 
 from . import chiral_pb2
 from . import chiral_pb2_grpc
-from ..types import TransferFile
+from ..ftp import FtpClient
 
-class Client:
+class ChiralClient:
     # def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
     def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, options: typing.List[typing.Tuple[str, int]] = []):
         self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}', options = options)
@@ -19,142 +19,99 @@ class Client:
         )
         self.user_email = email
         self.token_api = token_api
+
+    def create_ftp_client(self) -> FtpClient:
         reply = self.stub.UserInitialize(chiral_pb2.RequestUserInitialize(), metadata=self.metadata)
         if reply.error:
             raise Exception(f'Client auth error: {reply.error}')
         else:
-            self.ftp_addr = reply.settings['ftp_addr']
-            self.ftp_port = int(reply.settings['ftp_port'])
-            self.user_id = reply.settings['user_id']
-            self.ftp_root = ''
-            self.connect_file_server()
+            ftp_addr = reply.settings['ftp_addr']
+            ftp_port = int(reply.settings['ftp_port'])
+            user_id = reply.settings['user_id']
+            return FtpClient(ftp_addr=ftp_addr, ftp_port=ftp_port, user_email=self.user_email, token_api=self.token_api, user_id=user_id)
 
-    def connect_file_server(self):
-        self.ftp = ftplib.FTP()
-        self.ftp.connect(self.ftp_addr, self.ftp_port)
-        self.ftp.login(self.user_email, self.token_api)
-        self.ftp.cwd(self.user_id)
-        self.ftp_root = self.ftp.pwd()
-
-    def disconnect_file_server(self):
-        self.ftp.quit()
-        self.ftp_root = ''
-
-    def reconnect(self):
-        if self.ftp_root == '':
-            self.connect_file_server()
-        else:
-            try:
-                self.ftp.cwd(self.ftp_root)
-            except Exception:
-                print('reconnecting ...')
-                self.connect_file_server()
-
-    def upload_files(self, files: typing.List[TransferFile]):
-        self.reconnect()
-        for (fn, local_dir, remote_dir) in files:
-            self.ftp.cwd(remote_dir)
-            # if file exists remotely, skip uploading
-            try:
-                self.ftp.size(fn)
-            except Exception:
-                with open(pathlib.Path(local_dir).joinpath(fn), 'rb') as file:
-                    self.ftp.storbinary(f'STOR {fn}', file)
-
-    def download_files(self, files: typing.List[TransferFile]):
-        self.reconnect()
-        for (fn, local_dir, remote_dir) in files:
-            self.ftp.cwd(remote_dir)
-            with open(pathlib.Path(local_dir).joinpath(fn), 'wb') as file:
-                self.ftp.retrbinary(f'RETR {fn}', file.write)
-
-    def remove_files(self, files: typing.List[TransferFile]):
-        self.reconnect()
-        for (fn, _, remote_dir) in files:
-            self.ftp.cwd(remote_dir)
-            self.ftp.delete(fn)
-
-    def is_remote_file(self, file: TransferFile) -> bool:
-        self.reconnect()
-        filename, _, remote_dir = file
-        self.ftp.cwd(remote_dir)
-        try:
-            file_size = self.ftp.size(filename)
-            return bool(file_size)
-        except Exception:
-            return False
-
-    def is_remote_dir(self, parent_dir: str, dir: str) -> bool:
-        self.reconnect()
-        self.ftp.cwd(self.ftp_root)
-        self.ftp.cwd(parent_dir)
-        return dir in self.ftp.nlst()
-
-    def create_remote_dir(self, dir_name: str):
-        self.reconnect()
-        self.ftp.cwd(self.ftp_root)
-        self.ftp.mkd(dir_name)
-
-    def remove_remote_dir(self, parent_dir: str, dir: str):
-        self.reconnect()
-        # will remove all the files inside
-        self.ftp.cwd(self.ftp_root)
-        self.ftp.cwd(parent_dir)
-        self.ftp.cwd(dir)
-        for filename in self.ftp.nlst():
-            self.ftp.delete(filename)
-        self.ftp.cwd('..')
-        self.ftp.rmd(dir)
+    # def remove_remote_dir(self, parent_dir: str, dir: str):
+    #     self.reconnect()
+    #     # will remove all the files inside
+    #     self.ftp.cwd(self.ftp_root)
+    #     self.ftp.cwd(parent_dir)
+    #     self.ftp.cwd(dir)
+    #     for filename in self.ftp.nlst():
+    #         self.ftp.delete(filename)
+    #     self.ftp.cwd('..')
+    #     self.ftp.rmd(dir)
 
     def __del__(self):
         self.channel.close()
 
-    # def submit_job(self, job_req: str, divisor: int) -> str:
-    #     reply = self.stub.UserSubmitJob(chiral_pb2.RequestAcceptJob(requirement=job_req, divisor=divisor), metadata=self.metadata)
-    #     if reply.error:
-    #         raise Exception(f'Submit job error: {reply.error}')
-    #     else:
-    #         return reply.job_id
+    def submit_job_shell_scripts(self,
+        work_dir: str,
+        script_file: str,
+        apps: typing.List[chiral_pb2.AppType],
+        args: typing.List[str],
+        prompts: typing.List[str],
+        input_files: typing.List[str],
+        output_files: typing.List[str],
+        checkpoint_files: typing.List[str],
+        log_files: typing.List[str]
+    ) -> str:
+        job_command = chiral_pb2.JobCommand(is_long=True, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
+        job_scripts = chiral_pb2.JobScript(command=job_command, script_file=script_file, apps=apps)
+        request = chiral_pb2.RequestUserSubmitAppJob(job_scripts)
+        reply = self.stub.UserSubmitAppJob(request, metadata = self.metadata)
+
+        if reply.success:
+            return reply.job_id
+        else:
+            raise Exception(f'submit shell scripts job error: {reply.error}')
+
+    def submit_gromacs_job(self, is_long: bool,
+        args: typing.List[str],
+        prompts: typing.List[str],
+        work_dir: str,
+        input_files: typing.List[str],
+        output_files: typing.List[str],
+        checkpoint_files: typing.List[str],
+        log_files: typing.List[str]
+    ) -> str:
+        job_gromacs = chiral_pb2.JobCommand(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
+        reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(gromacs=job_gromacs), metadata = self.metadata)
+
+        if reply.success:
+            return reply.job_id
+        else:
+            raise Exception(f'submit gromacs job error: {reply.error}')
+
+    def send_monitor_action(self,
+        job_id: str,
+        monitor_action_type: chiral_pb2.MonitorActionType
+    ) -> chiral_pb2.MonitorActionReply:
+        request = chiral_pb2.RequestUserSendMonitorAction(job_id, monitor_action_type)
+        reply = self.stub.UserSendMonitorAction(request, metadata = self.metadata)
+        if reply.success:
+            return reply.reply
+        else:
+            raise Exception(f'send monitor action error: {reply.error}')
 
     def cancel_job(self, job_id: str):
         reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_CANCEL), metadata=self.metadata)
         if not reply.success:
             raise Exception(f'cancel job error: {reply.error}')
 
-    def request_log_files(self, job_id: str):
+    def get_log_files(self, job_id: str):
         reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_GET_DETAILS), metadata=self.metadata)
         if not reply.success:
             raise Exception(f'cancel job error: {reply.error}')
 
-    def check_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
+    def get_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
         return self.stub.UserGetJobStatus(chiral_pb2.RequestUserGetJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
-
-    # def get_job_result(self, job_id: str) -> (typing.List[str], str):
-    #     reply = self.stub.JobResult(chiral_pb2.RequestJobResult(job_id=job_id), metadata=self.metadata)
-    #     if reply.error:
-    #         return ([], f'Get job result error: {reply.error}')
-    #     else:
-    #         job_result = json.loads(reply.job_result)
-    #         if job_result['error']:
-    #             return ([], f'Job running error in cloud: {job_result["error"]}')
-    #         else:
-    #             return (job_result["outputs"], "")
 
     def wait_until_completion(self, job_id: str):
         while True:
-            job_statuses = self.check_job_status([job_id])
-            if job_id in job_statuses and job_statuses[job_id] in ['"Completed"', '"Cancelled"']:
+            job_statuses = self.get_job_status([job_id])
+            if job_id in job_statuses and job_statuses[job_id] in ['"Completed"', "CompletedWithError", '"Cancelled"']:
                 break
             time.sleep(0.5)
-
-    def submit_gromacs_job(self, is_long: bool, args: typing.List[str], prompts: typing.List[str], work_dir: str, input_files: typing.List[str], output_files: typing.List[str], checkpoint_files: typing.List[str], log_files: typing.List[str]) -> str:
-        job_gromacs = chiral_pb2.JobGromacs(is_long=is_long, args=args, prompts=prompts, work_dir=work_dir, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
-        reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(app_type=chiral_pb2.APP_GROMACS, gromacs=job_gromacs), metadata = self.metadata)
-
-        if reply.success:
-            return reply.job_id
-        else:
-            raise Exception(f'submit gromacs job error: {reply.error}')
 
     def check_credit_points(self) -> float:
         reply = self.stub.UserGetCreditPoints(chiral_pb2.RequestUserGetCreditPoints(), metadata = self.metadata)

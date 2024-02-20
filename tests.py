@@ -1,111 +1,152 @@
+from logging import shutdown
 import sys
 import os
 import shutil
 import chiral_client
-from chiral_client import Client, JobManager
+from chiral_client.client import ChiralClient
+from chiral_client.ftp import PathType, FtpClient
+from chiral_client import JobManager
 
 CURSOR_UP_ONE = '\x1b[1A'
 ERASE_LINE = '\x1b[2K'
 
 USE_REMOTE = True
 
-def create_client_for_local_server() -> Client:
+def create_client_for_local_server() -> ChiralClient:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     user_token_api = os.environ['CHIRAL_TOKEN_API']
     chiral_computing_host = 'localhost'
     chiral_computing_port = '30001'
-    return Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+    return ChiralClient(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
 
-def create_client_for_remote_server() -> chiral_client.client.Client:
+def create_client_for_remote_server() -> ChiralClient:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     token_api = os.environ['CHIRAL_TOKEN_API']
     chiral_computing_host = 'api.chira.one'
     chiral_computing_port = '20000'
-    return chiral_client.client.Client(user_email, token_api, chiral_computing_host, chiral_computing_port)
+    return ChiralClient(user_email, token_api, chiral_computing_host, chiral_computing_port)
 
-def test_ftp():
-    client = create_client_for_local_server()
-    ftp = client.ftp
-    print(f'testing ftplib details ... starts')
-    ftp.cwd(client.user_id)
-    ftp.mkd("parent_dir")
-    ftp.cwd("parent_dir")
-    ftp.mkd("child_dir")
-    ftp.cwd("child_dir")
-    print(f'testing ftplib details ... entering directory parent_dir/child_dir')
-    ftp.cwd('parent_dir/child_dir')
-    assert f'{ftp.pwd()}' == f'/{client.user_id}/parent_dir/child_dir'
-    ftp.cwd('..')
-    ftp.rmd('child_dir')
-    ftp.cwd('..')
-    ftp.rmd('parent_dir')
-    print(f'testing ftplib details ... ends')
+def create_file(filename: str, local_dir: str):
+    with open(f'{local_dir}/{filename}', 'w') as f:
+        f.writelines(f'this is file {filename}')
+        f.close()
 
-def test_client():
+def remove_file(filename: str, local_dir: str):
+    full_path =  f'{local_dir}/{filename}'
+    if os.path.exists(full_path):
+        os.remove(full_path)
+
+def test_ftp_client():
+    def print_ftp_client(msg: str):
+        print(f'testing FtpClient {msg}')
+
     client = create_client_for_local_server()
-    client.connect_file_server()
-    assert client.ftp_root == f'/{client.user_id}'
-    print(f'client connect_file_server ... test pass')
-    client.disconnect_file_server()
-    assert client.ftp_root == ''
-    client.reconnect()
-    assert client.ftp_root == f'/{client.user_id}'
-    print(f'client reconnect ... test pass')
+    ftp = client.create_ftp_client()
+    ftp.connect()
+    assert ftp.root_dir == f'/{ftp.user_id}'
+    print_ftp_client(f'connect ... test pass')
+    ftp.disconnect()
+    assert ftp.root_dir == None
+    print_ftp_client(f'disonnect ... test pass')
+    ftp.cwd_root()
+    assert ftp.root_dir == f'/{ftp.user_id}'
+    print_ftp_client(f'cwd_root ... test pass')
+    parent_dir = 'parent_dir'
+    child_dir = 'child_dir'
+    test_filename_1 = '1.txt'
+    test_filename_2 = '2.txt'
+    create_file(test_filename_1, '.')
+    ftp.ftp.mkd(parent_dir)
+    ftp.ftp.cwd(parent_dir)
+    ftp.upload_file('.', test_filename_1)
+    ftp.ftp.mkd(child_dir)
+    ftp.ftp.cwd(child_dir)
+    ftp.upload_file('.', test_filename_1)
+    ftp.cwd_root()
+    assert ftp.path_exist(parent_dir) == PathType.Directory
+    assert ftp.path_exist(child_dir) == PathType.NotExist
+    assert ftp.path_exist(test_filename_1) == PathType.NotExist
+    assert ftp.path_exist(test_filename_2) == PathType.NotExist
+    ftp.ftp.cwd(parent_dir)
+    assert ftp.path_exist(parent_dir) == PathType.NotExist
+    assert ftp.path_exist(child_dir) == PathType.Directory
+    assert ftp.path_exist(test_filename_1) == PathType.File
+    assert ftp.path_exist(test_filename_2) == PathType.NotExist
+    os.remove(test_filename_1)
+    print_ftp_client(f'path_exist ... test pass')
+    assert not os.path.exists(test_filename_1)
+    ftp.cwd_root()
+    ftp.ftp.cwd(parent_dir)
+    ftp.download_file('.', test_filename_1)
+    assert os.path.exists(test_filename_1)
+    os.remove(test_filename_1)
+    print_ftp_client(f'download_file ... test pass')
+    ftp.cwd_root()
+    ftp.remove_dir_all(parent_dir)
+    assert ftp.path_exist(parent_dir) == PathType.NotExist
+    print_ftp_client(f'remove_dir_all ... test pass')
+
+def test_chiral_client():
+    # setup
+    test_dir = 'test_chiral_client'
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.mkdir(test_dir)
+    client = create_client_for_local_server()
+    # shell_scripts
+    # gromacs_job
+    # clean
+    shutil.rmtree(test_dir)
+
+
+def test_gromacs(jm: JobManager, parent_dir: str):
+    # set up
+    test_dir = os.path.join(parent_dir, 'test_gromacs')
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.mkdir(test_dir)
+    #
+    data_dir = os.environ["CHIRAL_DATA_DIR"]
+    shutil.copyfile(f'{data_dir}/gromacs/lysozyme/1AKI_clean.pdb', f'{test_dir}/1AKI_clean.pdb')
+    print("-------------- Testing Gromacs Job --------------")
+    project_name = 'lysozyme'
+    jm.ensure_connection()
+    jm.create_remote_dir('gromacs')
+    jm.set_remote_dir('gromacs')
+    jm.set_project_name(project_name)
+    jm.set_local_dir(test_dir)
+    input_files = ['1AKI_clean.pdb']
+    output_files = ["1AKI_processed.gro", "topol.top", "posre.itp"]
+    job_id = jm.submit_job_gromacs('pdb2gmx -f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', input_files, output_files, [], [])
+    assert len(job_id) > 0
+    jm.wait_until_completion(job_id)
+    jm.download_files(output_files)
+    for filename in output_files:
+        assert os.path.exists(os.path.join(test_dir, filename))
+
+    # submit a job with wrong input
+    # job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
+    # c.wait_until_completion(job_id)
+    # (output, error) = job_mgr.get_output(c, job_id)
+    # assert output == {}
+    # assert error != ''
+    # sys.stdout.write(CURSOR_UP_ONE)
+    # sys.stdout.write(ERASE_LINE)
+    print("-------------- Testing Gromacs Job Done --------------")
+    # clean
+    shutil.rmtree(test_dir)
 
 def test_job_manager():
+    # setup
     test_dir = 'test_job_manager'
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
-
-    with open(os.path.join(test_dir, '1.txt'), 'w') as f: f.close()
-    with open(os.path.join(test_dir, '2.txt'), 'w') as f: f.close()
-
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.mkdir(test_dir)
+    #
     jm = JobManager()
-    jm.set_local_dir(test_dir)
-    jm.create_remote_dir(test_dir)
-    jm.set_remote_dir(test_dir)
-
-    filenames = ['1.txt', '2.txt']
-    jm.upload_files(filenames)
-
-
-    # if os.path.exists(test_dir):
-    #     shutil.rmtree(test_dir)
-
-# def test_gromacs(c: chiral_client.client.Client = create_client_for_local_server()):
-#     test_dir = 'test_gromacs'
-#     if os.path.exists(test_dir):
-#         shutil.rmtree(test_dir)
-#     os.mkdir(test_dir)
-
-#     data_dir = os.environ["CHIRAL_DATA_DIR"]
-#     shutil.copyfile(f'{data_dir}/gromacs/lysozyme/1AKI_clean.pdb', f'{test_dir}/1AKI_clean.pdb')
-#     print("-------------- Testing Gromacs Job --------------")
-#     c.connect_file_server()
-#     simulation_id = 'lysozyme'
-#     if c.is_remote_dir('gromacs', simulation_id):
-#         c.remove_remote_dir('gromacs', simulation_id)
-#     job_mgr = chiral_client.GromacsJobManager(simulation_id, test_dir, c)
-#     # upload input files
-#     job_mgr.upload_files(c, ['1AKI_clean.pdb'])
-#     # submit a job
-#     job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', ['1AKI_clean.pdb'], ["1AKI_processed.gro", "topol.top", "posre.itp"])
-#     assert len(job_id) > 0
-#     c.wait_until_completion(job_id)
-#     (output, error) = job_mgr.get_output(c, job_id)
-#     assert len(output['stdout']) > 0
-#     assert len(output['stderr']) == 0
-#     assert error == ''
-#     # submit a job with wrong input
-#     job_id = job_mgr.submit_job(c, 'pdb2gmx', '-f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce', '15 0', '1AKI_clean.pdb', ["1AKI_processed.gro", "topol.top", "posre.itp"])
-#     c.wait_until_completion(job_id)
-#     (output, error) = job_mgr.get_output(c, job_id)
-#     assert output == {}
-#     assert error != ''
-#     sys.stdout.write(CURSOR_UP_ONE)
-#     sys.stdout.write(ERASE_LINE)
-#     print("-------------- Testing Gromacs Job Done --------------")
-#     shutil.rmtree(test_dir)
+    test_gromacs(jm, test_dir)
+    # clean
+    # shutil.rmtree(test_dir)
 
 # def test_recgen(c: chiral_client.client.Client = _create_client()):
 #     test_dir = 'test_recgen'
@@ -147,63 +188,7 @@ def test_job_manager():
 #     sys.stdout.write(ERASE_LINE)
 #     print("-------------- Testing LLaMA2 Job Done --------------")
 
-def create_file(filename: str, local_dir: str):
-    with open(f'{local_dir}/{filename}', 'w') as f:
-        f.writelines(f'this is file {filename}')
-        f.close()
-
-def remove_file(filename: str, local_dir: str):
-    full_path =  f'{local_dir}/{filename}'
-    if os.path.exists(full_path):
-        os.remove(full_path)
-
-def test_file_transfer(c: chiral_client.client.Client = create_client_for_local_server()):
-    print("-------------- Testing File Transfer --------------")
-    c.connect_file_server()
-
-    # file list
-    for remote_dir in ['gromacs_test_1', 'gromacs_test_2']:
-        if not c.is_remote_dir('.', remote_dir):
-            c.create_remote_dir(remote_dir)
-    files = [
-        ('1.txt', '.', 'gromacs_test_1'),
-        ('2.txt', '.', 'gromacs_test_2')
-    ]
-    # file does not exist in remote server
-    for f in files:
-        assert not c.is_remote_file(f)
-
-    # create local files and upload it
-    for (fn, local_dir, _) in files:
-        create_file(fn, local_dir)
-    c.upload_files(files)
-
-    # now files on remote servers
-    for f in files:
-        assert c.is_remote_file(f)
-
-    # test remote dirs
-    assert c.is_remote_dir('.', 'gromacs_test_1')
-    assert c.is_remote_dir('.', 'gromacs_test_2')
-    assert not c.is_remote_dir('.', 'gromacs_test_3')
-    c.create_remote_dir('gromacs_test_3')
-    assert c.is_remote_dir('.', 'gromacs_test_3')
-    c.remove_remote_dir('.', 'gromacs_test_3')
-    assert not c.is_remote_dir('.', 'gromacs_test_3')
-
-    c.remove_files(files)
-    for remote_dir in ['gromacs_test_1', 'gromacs_test_2']:
-        c.remove_remote_dir('.', remote_dir)
-    c.disconnect_file_server()
-    for (fn, local_dir, _) in files:
-        remove_file(fn, local_dir)
-
-
 if __name__ == '__main__':
-    test_ftp()
-    test_client()
+    test_ftp_client()
+    test_chiral_client()
     test_job_manager()
-    # test_gromacs()
-    # test_recgen()
-    # test_llama2()
-    # test_file_transfer()

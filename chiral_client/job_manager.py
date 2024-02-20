@@ -2,8 +2,8 @@ import typing
 import os
 import json
 import pathlib
-from . import Client
-from .types import TransferFile
+from .client import ChiralClient
+from .ftp import FtpClient
 
 class JobManager:
     project_name: str
@@ -19,12 +19,16 @@ class JobManager:
         user_token_api = os.environ['CHIRAL_TOKEN_API']
         chiral_computing_host = os.environ['CHIRAL_DATABASE_ADDR']
         chiral_computing_port = os.environ['CHIRAL_DATABASE_PORT']
-        self.client = Client(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+        self.chiral = ChiralClient(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+        self.ftp = self.chiral.create_ftp_client()
+
+    def ensure_connection(self):
+        self.ftp.cwd_root()
 
     def create_remote_dir(self, remote_dir: str):
-        self.client.reconnect()
-        if not remote_dir in self.client.ftp.nlst():
-            self.client.ftp.mkd(remote_dir)
+        self.ftp.cwd_root()
+        if not remote_dir in self.ftp.ftp.nlst():
+            self.ftp.ftp.mkd(remote_dir)
 
     def set_remote_dir(self, remote_dir: str):
         self.remote_dir = remote_dir
@@ -34,38 +38,50 @@ class JobManager:
 
     def set_project_name(self, project_name: str):
         self.project_name = project_name
-        self.client.reconnect()
-        self.client.ftp.cwd(self.remote_dir)
-        if not project_name in self.client.ftp.nlst():
-            self.client.ftp.mkd(project_name)
+        self.ftp.cwd_root()
+        self.ftp.ftp.cwd(self.remote_dir)
+        if not project_name in self.ftp.ftp.nlst():
+            self.ftp.ftp.mkd(project_name)
 
     def upload_files(self, files: typing.List[str]):
         # files: list of file names, without directory
         remote_project_dir = f'{self.remote_dir}/{self.project_name}'
-        self.client.reconnect()
-        self.client.ftp.cwd(remote_project_dir)
-        for fn in files:
-            try:
-                self.client.ftp.size(fn)
-                self.client.ftp.delete(fn)
-            except Exception:
-                pass
+        self.ftp.cwd_root()
+        self.ftp.ftp.cwd(remote_project_dir)
+        for filename in files:
+            self.ftp.upload_file(self.local_dir, filename)
 
-            with open(pathlib.Path(self.local_dir).joinpath(fn), 'rb') as file:
-                self.client.ftp.storbinary(f'STOR {fn}', file)
+    def download_files(self, files: typing.List[str]):
+        remote_project_dir = f'{self.remote_dir}/{self.project_name}'
+        self.ftp.ftp.cwd(remote_project_dir)
+        for filename in files:
+            self.ftp.download_file(self.local_dir, filename)
 
-    def download_files(self, client: Client, files: typing.List[str]):
-        remote_dir = f'{self.remote_dir}/{self.project_name}'
-        files_transfer: typing.List[TransferFile] = list(map(lambda f: (f, self.local_dir, remote_dir), files))
-        client.download_files(files_transfer)
+    def submit_job_gromacs(self,
+        args: str,
+        prompts: str,
+        input_files: typing.List[str],
+        output_files: typing.List[str],
+        checkpoint_files: typing.List[str],
+        log_files: typing.List[str]
+    ) -> str:
+        self.upload_files(input_files)
+        job_id = self.chiral.submit_gromacs_job(is_long=True, args=args.split(' '), prompts=prompts.split(' '), work_dir=self.project_name, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
+        return job_id
+
+    def submit_job_script(self
+    ) -> str:
+        return ''
+
+    def wait_until_completion(self, job_id: str):
+        self.chiral.wait_until_completion(job_id=job_id)
+
+
 
     # def clear_files(self, client: Client):
     #     if client.is_remote_dir('.', self.remote_dir):
     #         client.remove_remote_dir('.', self.remote_dir)
     #     client.create_remote_dir(self.remote_dir)
-
-    # def submit_job(self, client: Client, work_dir: str, is_long: bool, arguments: str, prompts: str, files_input: typing.List[str], files_output: typing.List[str], files_checkpoint: typing.List[str], files_log: typing.List[str]) -> str:
-    #     return client.submit_gromacs_job(is_long, arguments.split(' '), prompts.split(' '), work_dir, files_input, files_output, files_checkpoint, files_log)
 
     # def get_output(self, client: Client, job_id: str) -> (str, str):
     #     (outputs, error) = client.get_job_result(job_id)
