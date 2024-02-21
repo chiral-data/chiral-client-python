@@ -1,31 +1,21 @@
-import sys
 import os
 import shutil
 import time
 
-import chiral_client
 from chiral_client.client import ChiralClient
 from chiral_client.ftp import PathType, FtpClient
 from chiral_client import JobManager, AppType
 
-CURSOR_UP_ONE = '\x1b[1A'
-ERASE_LINE = '\x1b[2K'
-
-USE_REMOTE = True
-
 def create_client_for_local_server() -> ChiralClient:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     user_token_api = os.environ['CHIRAL_TOKEN_API']
-    chiral_computing_host = 'localhost'
-    chiral_computing_port = '30001'
-    return ChiralClient(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+    chiral_cloud_url = os.environ['CHIRAL_CLOUD_URL']
+    return ChiralClient(user_email, user_token_api, chiral_cloud_url)
 
 def create_client_for_remote_server() -> ChiralClient:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     token_api = os.environ['CHIRAL_TOKEN_API']
-    chiral_computing_host = 'api.chira.one'
-    chiral_computing_port = '20000'
-    return ChiralClient(user_email, token_api, chiral_computing_host, chiral_computing_port)
+    return ChiralClient(user_email, token_api, 'api.chiral.one:20000')
 
 def create_file(filename: str, local_dir: str):
     with open(f'{local_dir}/{filename}', 'w') as f:
@@ -192,46 +182,7 @@ def test_job_manager():
     jm = JobManager()
     test_gromacs(jm, test_dir)
     # clean
-    # shutil.rmtree(test_dir)
-
-# def test_recgen(c: chiral_client.client.Client = _create_client()):
-#     test_dir = 'test_recgen' #     if os.path.exists(test_dir):
-#         shutil.rmtree(test_dir)
-#     os.mkdir(test_dir)
-#     for sample in ['sample1', 'sample4']:
-#         shutil.copyfile(f'{os.environ["CHIRAL_DATA_DIR"]}/recgen/inputs/{sample}.mol', f'{test_dir}/{sample}.mol')
-#     print("-------------- Testing ReCGen Job --------------")
-#     job_mgr = chiral_client.RecGenJobManager()
-
-#     for (mol_file, result_count) in [
-#         ('sample1', 1117),
-#         ('sample4', 33),
-#     ]:
-#         with open(f'{test_dir}/{mol_file}.mol') as f:
-#             input_mol = f.read()
-#             f.close()
-#         job_id = job_mgr.submit_job(c, input_mol)
-#         c.wait_until_completion(job_id)
-#         (output, error) = job_mgr.get_output(c, job_id)
-#         assert len(output) == result_count
-#         assert error == ''
-#     sys.stdout.write(CURSOR_UP_ONE)
-#     sys.stdout.write(ERASE_LINE)
-#     print("-------------- Testing ReCGen Job Done --------------")
-#     shutil.rmtree(test_dir)
-
-# def test_llama2(c: chiral_client.client.Client = _create_client()):
-#     print("-------------- Testing LLaMA2 Job --------------")
-#     job_mgr = chiral_client.Llma2JobManager()
-#     job_id = job_mgr.submit_job(c, 0.0, "I am so tired today after work")
-#     c.wait_until_completion(job_id)
-#     (output, error) = job_mgr.get_output(c, job_id)
-#     # print(output['text'])
-#     assert len(output['text']) > 0
-#     assert error == ''
-#     sys.stdout.write(CURSOR_UP_ONE)
-#     sys.stdout.write(ERASE_LINE)
-#     print("-------------- Testing LLaMA2 Job Done --------------")
+    shutil.rmtree(test_dir)
 
 if __name__ == '__main__':
     test_ftp_client()

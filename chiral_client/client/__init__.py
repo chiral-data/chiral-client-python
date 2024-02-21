@@ -9,9 +9,8 @@ from . import chiral_pb2_grpc
 from ..ftp import FtpClient
 
 class ChiralClient:
-    # def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, file_server_addr: str, file_server_port: int):
-    def __init__(self, email: str, token_api: str, computing_server_addr: str, computing_server_port: str, options: typing.List[typing.Tuple[str, int]] = []):
-        self.channel = grpc.insecure_channel(f'{computing_server_addr}:{computing_server_port}', options = options)
+    def __init__(self, email: str, token_api: str, chiral_computing_url: str, options: typing.List[typing.Tuple[str, int]] = []):
+        self.channel = grpc.insecure_channel(chiral_computing_url, options = options)
         self.stub = chiral_pb2_grpc.ChiralStub(self.channel)
         self.metadata = (
             ('user_id', email),
@@ -29,17 +28,6 @@ class ChiralClient:
             ftp_port = int(reply.settings['ftp_port'])
             user_id = reply.settings['user_id']
             return FtpClient(ftp_addr=ftp_addr, ftp_port=ftp_port, user_email=self.user_email, token_api=self.token_api, user_id=user_id)
-
-    # def remove_remote_dir(self, parent_dir: str, dir: str):
-    #     self.reconnect()
-    #     # will remove all the files inside
-    #     self.ftp.cwd(self.ftp_root)
-    #     self.ftp.cwd(parent_dir)
-    #     self.ftp.cwd(dir)
-    #     for filename in self.ftp.nlst():
-    #         self.ftp.delete(filename)
-    #     self.ftp.cwd('..')
-    #     self.ftp.rmd(dir)
 
     def __del__(self):
         self.channel.close()

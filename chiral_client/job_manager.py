@@ -1,10 +1,8 @@
 import typing
 import os
-import json
 import pathlib
 import tarfile
 from .client import ChiralClient
-from .ftp import FtpClient
 from .app_type import AppType
 
 class JobManager:
@@ -12,16 +10,17 @@ class JobManager:
     local_dir: str
     remote_dir: str
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        user_email: str, 
+        token_api: str,
+        chiral_computing_url: str 
+    ) -> None:
         self.project_name = '.'
         self.local_dir = '.'
         self.remote_dir = '.'
 
-        user_email = os.environ['CHIRAL_USER_EMAIL']
-        user_token_api = os.environ['CHIRAL_TOKEN_API']
-        chiral_computing_host = os.environ['CHIRAL_DATABASE_ADDR']
-        chiral_computing_port = os.environ['CHIRAL_DATABASE_PORT']
-        self.chiral = ChiralClient(user_email, user_token_api, chiral_computing_host, chiral_computing_port)
+        self.chiral = ChiralClient(user_email, token_api, chiral_computing_url)
         self.ftp = self.chiral.create_ftp_client()
 
     def create_remote_dir(self, parent_dir: str, dirname: str):
@@ -116,3 +115,6 @@ class JobManager:
 
     def wait_until_completion(self, job_id: str):
         self.chiral.wait_until_completion(job_id=job_id)
+
+    def check_credit_points(self) -> float:
+        return self.chiral.check_credit_points()
