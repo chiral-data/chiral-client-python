@@ -27,7 +27,9 @@ class ChiralClient:
             ftp_addr = reply.settings['ftp_addr']
             ftp_port = int(reply.settings['ftp_port'])
             user_id = reply.settings['user_id']
-            return FtpClient(ftp_addr=ftp_addr, ftp_port=ftp_port, user_email=self.user_email, token_api=self.token_api, user_id=user_id)
+            ftp = FtpClient(ftp_addr=ftp_addr, ftp_port=ftp_port, user_email=self.user_email, token_api=self.token_api, user_id=user_id)
+            ftp.connect()
+            return ftp
 
     def __del__(self):
         self.channel.close()

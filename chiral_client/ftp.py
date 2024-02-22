@@ -69,7 +69,17 @@ class FtpClient:
         with open(pathlib.Path(local_dir).joinpath(filename), 'wb') as file:
             self.ftp.retrbinary(f'RETR {filename}', file.write)
 
-    def remove_dir_all(self, dirname: str):
+    def create_dir(self, parent_dir: str, dirname: str):
+        # parent_dir can be multilevel directory, but under the root directory
+        # if dir exists, do nothing
+        current_dir = self.ftp.pwd()
+        self.cwd_root()
+        self.ftp.cwd(parent_dir)
+        if not dirname in self.ftp.nlst():
+            self.ftp.mkd(dirname)
+        self.ftp.cwd(current_dir)
+
+    def remove_dir_recursively(self, dirname: str):
         parent_dir = self.ftp.pwd()
         self.ftp.cwd(dirname)
         for pathname in self.ftp.nlst():
@@ -77,7 +87,16 @@ class FtpClient:
                 self.ftp.delete(pathname)
             else:
                 current_dir = self.ftp.pwd()
-                self.remove_dir_all(pathname)
+                self.remove_dir_recursively(pathname)
                 self.ftp.cwd(current_dir)
         self.ftp.cwd(parent_dir)
         self.ftp.rmd(dirname)
+
+    def remove_dir(self, parent_dir: str, dirname: str):
+        # if dir does not exist, do nothing
+        current_dir = self.ftp.pwd()
+        self.cwd_root()
+        self.ftp.cwd(parent_dir)
+        if dirname in self.ftp.nlst():
+            self.remove_dir_recursively(dirname)
+        self.ftp.cwd(current_dir)
