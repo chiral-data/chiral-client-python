@@ -14,7 +14,7 @@ def require_project(func):
     return wrapper_func
 
 class JobManager:
-    project_name: str
+    project: str
     local_dir: str
     remote_dir: str
 
@@ -30,28 +30,34 @@ class JobManager:
         self.ftp = self.chiral.create_ftp_client()
 
         self.remote_dir = remote_dir
-        self.create_remote_dir(remote_dir)
-
+        self._create_remote_dir()
         self.local_dir = pathlib.Path(local_dir).absolute()
-
         self.project = ''
 
-    def create_remote_dir(self, remote_dir: str):
-        parent = pathlib.Path(remote_dir).parent
-        basename = os.path.basename(remote_dir)
-        self.ftp.create_dir(str(parent), basename)
-
-    def remove_remote_dir(self):
+    def _create_remote_dir(self):
         parent = pathlib.Path(self.remote_dir).parent
         basename = os.path.basename(self.remote_dir)
-        self.ftp.remove_dir(str(parent), basename)
+        self.ftp.create_dir(str(parent), basename)
+
+    def remove_remote_dir(self, parent_dir: str, dirname: str):
+        # parent = pathlib.Path(self.remote_dir).parent
+        # basename = os.path.basename(self.remote_dir)
+        # self.ftp.remove_dir(str(parent), basename)
+        #
+        # parent_dir and dirname are not necessary
+        # just to make remove less accessible to avoid any mistakes
+        self.ftp.remove_dir(parent_dir, dirname)
 
     def set_project(self, project: str):
         self.project = project
         # create the project directories remotely and locally
-        self.ftp.create_dir(self.remote_dir, project)
-        if not os.path.exists(os.path.join(self.local_dir, project)):
-            os.mkdir(os.path.join(self.local_dir, project))
+        # self.ftp.create_dir(self.remote_dir, project)
+        # if not os.path.exists(os.path.join(self.local_dir, project)):
+        #     os.mkdir(os.path.join(self.local_dir, project))
+
+    @require_project
+    def create_project_remote(self):
+        self.ftp.create_dir(self.remote_dir, self.project)
 
     @require_project
     def remove_project_remote(self):

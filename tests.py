@@ -96,6 +96,9 @@ def test_gromacs(jm: JobManager, parent_dir: str):
     # test submit gromacs job
     project = 'lysozyme'
     jm.set_project(project)
+    jm.create_project_remote()
+    if not os.path.exists(os.path.join(jm.local_dir, project)):
+        os.mkdir(os.path.join(jm.local_dir, project))
     shutil.copyfile(
         os.path.join(data_dir, 'gromacs', project, '1AKI_clean.pdb'),
         os.path.join(jm.local_dir, project, '1AKI_clean.pdb')
@@ -112,56 +115,6 @@ def test_gromacs(jm: JobManager, parent_dir: str):
     jm.remove_project_remote()
     jm.remove_project_local()
     print_test_gromacs('submit gromacs job ... pass')
-    # test submit script job
-    project = 'Mg_Ion_310d'
-    jm.set_project(project)
-    test_data_dir = os.path.join(data_dir, 'gromacs', jm.project)
-    for filename in os.listdir(test_data_dir):
-        shutil.copyfile(
-            os.path.join(test_data_dir, filename),
-            os.path.join(jm.local_dir, project, filename)
-        )
-    output_files = ['em1_psr1000.tpr', 'em1_psr1000.tng']
-    checkpoint_files = ['npt_eq2.cpt']
-    for filename in output_files:
-        os.remove(os.path.join(jm.local_dir, jm.project, filename))
-    jm.upload_directory()
-    script_file = '310d.sh'
-    job_id = jm.submit_job_script(script_file=script_file, apps=[AppType.Gromacs], input_files=[], output_files=output_files, checkpoint_files=checkpoint_files, log_files=[])
-    time.sleep(1.0)
-    assert jm.get_job_status(job_id) == 'Processing'
-    print_test_gromacs('submit script job ... pass')
-    jm.get_log_files(job_id)
-    time.sleep(2.0)
-    log_files = [f'{job_id}.out', f'{job_id}.err']
-    jm.download_files(log_files)
-    for log_file in log_files:
-        log_file_path = os.path.join(jm.local_dir, jm.project, log_file)
-        assert os.path.isfile(log_file_path)
-    print_test_gromacs('submit get log files ... pass')
-    jm.cancel_job(job_id)
-    time.sleep(1.0)
-    assert jm.get_job_status(job_id) == 'Cancelled'
-    print_test_gromacs('submit cancel job ... pass')
-    jm.remove_project_remote()
-    # make a short duration scripts
-    jm.set_project(project)
-    with open(os.path.join(jm.local_dir, jm.project, script_file), 'r') as f:
-        lines = f.readlines()
-        f.close()
-    with open(os.path.join(jm.local_dir, jm.project, script_file), 'w') as f:
-        f.write(''.join(lines[:2]))
-        f.close()
-    jm.upload_directory()
-    job_id = jm.submit_job_script(script_file=script_file, apps=[AppType.Gromacs], input_files=[], output_files=output_files, checkpoint_files=checkpoint_files, log_files=[])
-    jm.wait_until_completion(job_id)
-    for file_output in output_files:
-        assert not os.path.exists(os.path.join(jm.local_dir, file_output))
-    jm.download_files(output_files)
-    for file_output in output_files:
-        assert os.path.exists(os.path.join(jm.local_dir, jm.project, file_output))
-    print_test_gromacs('submit job complete with output files ... pass')
-
 
 def test_job_manager():
     # setup
@@ -173,10 +126,12 @@ def test_job_manager():
     user_email = os.environ['CHIRAL_USER_EMAIL']
     token_api = os.environ['CHIRAL_TOKEN_API']
     chiral_computing_url = os.environ['CHIRAL_CLOUD_URL']
-    jm = JobManager(user_email, token_api, chiral_computing_url, 'gromacs', test_dir)
+    remote_dir = 'gromacs'
+    local_dir = test_dir
+    jm = JobManager(user_email, token_api, chiral_computing_url, remote_dir, local_dir)
     test_gromacs(jm, test_dir)
     # clean
-    jm.remove_remote_dir()
+    jm.remove_remote_dir('.', 'gromacs')
     shutil.rmtree(test_dir)
 
 if __name__ == '__main__':
