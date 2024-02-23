@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-=======
 # Deprecated V0.3.0
 
 import typing
->>>>>>> dev
 from enum import Enum
 
 class OperatorKind(str, Enum):
@@ -22,8 +19,4 @@ class JobRequirement:
     def __init__(self, input_str: str, opk: OperatorKind, dsk: DatasetKind) -> None:
         self.ji = input_str
         self.opk = opk
-<<<<<<< HEAD
         self.dsk = dsk
-=======
-        self.dsk = dsk
->>>>>>> dev
