@@ -1,3 +1,6 @@
+# Deprecated V0.3.0
+
+import typing
 from enum import Enum
 
 class OperatorKind(str, Enum):

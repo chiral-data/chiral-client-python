@@ -11,7 +11,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Qin Wan",
     author_email="rogerwq@gmail.com",
-    url="https://github.com/chiral-data",
+    url="https://github.com/chiral-data/chiral-client-python",
     packages=find_packages(),
     install_requires=[
     ],
