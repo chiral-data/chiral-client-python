@@ -30,7 +30,8 @@ def test_ftp_client():
     def print_ftp_client(msg: str):
         print(f'testing FtpClient {msg}')
 
-    client = create_client_for_local_server()
+    # client = create_client_for_local_server()
+    client = create_client_for_remote_server()
     ftp = client.create_ftp_client()
     ftp.connect()
     assert ftp.root_dir == f'/{ftp.user_id}'
@@ -123,4 +124,4 @@ def test_client():
 
 if __name__ == '__main__':
     test_ftp_client()
-    test_client()
+    # test_client()
