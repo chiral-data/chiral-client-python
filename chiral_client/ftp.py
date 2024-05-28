@@ -1,6 +1,7 @@
 import ftplib
 import enum
 import pathlib
+from contextlib import contextmanager
 
 class PathType(enum.Enum):
     NotExist = 0
@@ -28,14 +29,18 @@ class FtpClient:
         self.root_dir = None
 
     def cwd_root(self):
-        if self.root_dir == None:
-            self.connect()
+        if self.root_dir:
+            self.ftp.cwd(self.root_dir)
         else:
-            try:
-                self.ftp.cwd(self.root_dir)
-            except Exception:
-                print('reconnecting ...')
-                self.connect()
+            raise ValueError('root dir is None')
+        # if self.root_dir == None:
+        #     self.connect()
+        # else:
+        #     try:
+        #         self.ftp.cwd(self.root_dir)
+        #     except Exception:
+        #         print('reconnecting ...')
+        #         self.connect()
 
     def path_exist(self, pathname: str) -> PathType:
         if not pathname in self.ftp.nlst():
@@ -99,3 +104,11 @@ class FtpClient:
         if dirname in self.ftp.nlst():
             self.remove_dir_recursively(dirname)
         self.ftp.cwd(current_dir)
+
+@contextmanager
+def ftp_connect(ftp: FtpClient):
+    try:
+        ftp.connect()
+        yield ftp
+    finally:
+        ftp.disconnect()

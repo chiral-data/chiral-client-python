@@ -5,6 +5,7 @@ import pathlib
 import tarfile
 from .chiral import ChiralClient
 from .app_type import AppType
+from .ftp import ftp_connect
 
 def require_project(func):
     def wrapper_func(self, *args, **kwargs) -> typing.Any:
@@ -45,7 +46,8 @@ class Client:
     def _create_remote_dir(self):
         parent = pathlib.Path(self.remote_dir).parent
         basename = os.path.basename(self.remote_dir)
-        self.ftp.create_dir(str(parent), basename)
+        with ftp_connect(self.ftp) as ftp:
+            ftp.create_dir(str(parent), basename)
 
     def set_remote_dir(self, remote_dir: str):
         """
@@ -74,7 +76,8 @@ class Client:
         - parent_dir (str): The directory path where the directory to be removed exists.
         - dirname (str): The name of the directory to be removed.
         """
-        self.ftp.remove_dir(parent_dir, dirname)
+        with ftp_connect(self.ftp) as ftp:
+            ftp.remove_dir(parent_dir, dirname)
 
     def set_project(self, project: str):
         """
@@ -92,14 +95,16 @@ class Client:
         Create the remote directory for the current project.
         The directory will be remote_dir/project.
         """
-        self.ftp.create_dir(self.remote_dir, self.project)
+        with ftp_connect(self.ftp) as ftp:
+            ftp.create_dir(self.remote_dir, self.project)
 
     @require_project
     def remove_project_remote(self):
         """
         Remove the remote directory for the current project
         """
-        self.ftp.remove_dir(self.remote_dir, self.project)
+        with ftp_connect(self.ftp) as ftp:
+            ftp.remove_dir(self.remote_dir, self.project)
 
     @require_project
     def remove_project_local(self):
@@ -113,13 +118,12 @@ class Client:
         Parameters:
           files (list of str): List of file names without directory prefix.
         """
-        remote_project_dir = os.path.join(self.remote_dir, self.project)
-        self.ftp.cwd_root()
-        self.ftp.ftp.cwd(remote_project_dir)
-        local_project_dir = os.path.join(self.local_dir, self.project)
-        for filename in files:
-            self.ftp.upload_file(local_project_dir, filename)
-        self.ftp.cwd_root()
+        with ftp_connect(self.ftp) as ftp:
+            remote_project_dir = os.path.join(self.remote_dir, self.project)
+            ftp.ftp.cwd(remote_project_dir)
+            local_project_dir = os.path.join(self.local_dir, self.project)
+            for filename in files:
+                ftp.upload_file(local_project_dir, filename)
 
     @require_project
     def download_files(self, files: typing.List[str]):
@@ -128,13 +132,12 @@ class Client:
         Parameters:
           files (list of str): List of file names without directory prefix.
         """
-        remote_project_dir = os.path.join(self.remote_dir, self.project)
-        self.ftp.cwd_root()
-        self.ftp.ftp.cwd(remote_project_dir)
-        local_project_dir = os.path.join(self.local_dir, self.project)
-        for filename in files:
-            self.ftp.download_file(local_project_dir, filename)
-        self.ftp.cwd_root()
+        with ftp_connect(self.ftp) as ftp:
+            remote_project_dir = os.path.join(self.remote_dir, self.project)
+            ftp.ftp.cwd(remote_project_dir)
+            local_project_dir = os.path.join(self.local_dir, self.project)
+            for filename in files:
+                ftp.download_file(local_project_dir, filename)
 
     @require_project
     def upload_directory(self):
@@ -143,8 +146,6 @@ class Client:
         If the remote project directory exists, it will be renamed with a sequential number.
         """
         current_local_dir = pathlib.Path(os.curdir).absolute()
-        current_remote_dir = self.ftp.ftp.pwd()
-
         filename = f'{self.project}.tar.chiral'
         os.chdir(self.local_dir)
         with tarfile.open(filename, 'w') as tar:
@@ -152,12 +153,14 @@ class Client:
             for fn in os.listdir("."):
                 if os.path.isfile(fn):
                     tar.add(fn)
-        self.ftp.cwd_root()
-        self.ftp.ftp.cwd(self.remote_dir)
-        self.ftp.upload_file(self.local_dir, filename)
-        self.ftp.ftp.cwd(self.project) # trigger extraction
 
-        self.ftp.ftp.cwd(current_remote_dir)
+        with ftp_connect(self.ftp) as ftp:
+            ftp.cwd_root()
+            ftp.ftp.cwd(self.remote_dir)
+            ftp.upload_file(self.local_dir, filename)
+            ftp.ftp.cwd(self.project) # trigger extraction
+
+        # self.ftp.ftp.cwd(current_remote_dir)
         os.chdir(self.local_dir)
         os.remove(filename)
         os.chdir(current_local_dir)
