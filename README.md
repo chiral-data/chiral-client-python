@@ -16,8 +16,9 @@
 
 ## Publish
 ```bash
-python3 -m build
-python3 -m twine upload dist/*
+# under virtual environment "chiral-dev"
+python setup.py bdist_wheel
+twine upload dist/*
 ```
 
 ## Roadmap
