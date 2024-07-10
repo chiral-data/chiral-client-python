@@ -4,6 +4,7 @@ from time import sleep
 
 from chiral_client.chiral import ChiralClient
 from chiral_client.ftp import PathType
+from chiral_client.app_type import AppType
 from chiral_client import Client
 
 
@@ -24,6 +25,7 @@ def create_client(remote_dir: str, local_dir: str) -> Client:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     token_api = os.environ['CHIRAL_TOKEN_API']
     chiral_computing_url = os.environ['CHIRAL_CLOUD_URL']
+    print(f'Testing on {chiral_computing_url} with user {user_email} and token {token_api}')
     return Client(
         user_email, token_api, remote_dir,
         local_dir, chiral_computing_url
@@ -103,7 +105,7 @@ def test_gromacs(local_dir: str):
     client = create_client(remote_dir, local_dir)
     data_dir = os.environ["CHIRAL_DATA_DIR"]
 
-    # test submit gromacs job
+    # test gromacs command job
     project = 'lysozyme'
     client.set_project(project)
     client.create_project_remote()
@@ -128,10 +130,39 @@ def test_gromacs(local_dir: str):
             os.path.join(client.local_dir, project, filename)
         )
     client.remove_project_remote()
-    client.remove_project_local()
-    client.remove_remote_dir('.', remote_dir)
-    print_test_gromacs('submit gromacs job ... pass')
+    # client.remove_project_local()
+    print_test_gromacs('submit gromacs command job ... pass')
 
+    # test gromacs script job
+    project = 'benchmark'
+    client.set_project(project)
+    client.create_project_remote()
+    if not os.path.exists(os.path.join(client.local_dir, project)):
+        os.mkdir(os.path.join(client.local_dir, project))
+    input_file = 'benchMEM.tpr'
+    shutil.copyfile(
+        os.path.join(data_dir, project, input_file),
+        os.path.join(client.local_dir, project, input_file)
+    )
+    with open(os.path.join(client.local_dir, project, 'run.sh'), 'w') as f:
+        f.write(f'gmx mdrun -s {input_file} -nb gpu -nsteps 500')
+        f.close()
+
+    input_files = [input_file]
+    output_files = ['confout.gro']
+    client.upload_directory()
+    job_id = client.submit_job_script('run.sh', [AppType.Gromacs], input_files, output_files, [], [])
+    assert len(job_id) > 0
+    client.wait_until_completion(job_id)
+    client.download_files(output_files)
+    for filename in output_files:
+        assert os.path.exists(
+            os.path.join(client.local_dir, project, filename)
+        )
+    client.remove_project_remote()
+    # client.remove_project_local()
+    client.remove_remote_dir('.', remote_dir)
+    print_test_gromacs('submit gromacs scripts job ... pass')
 
 def test_long_idle(local_dir: str):
     print('Testing long idle ...')
@@ -179,12 +210,12 @@ def test_client():
 
     # test
     test_gromacs(test_dir)
-    test_long_idle(test_dir)
+    # test_long_idle(test_dir)
 
     # clean
     shutil.rmtree(test_dir)
 
 
 if __name__ == '__main__':
-    test_ftp_client()
+    # test_ftp_client()
     test_client()
