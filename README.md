@@ -1,6 +1,7 @@
 # chiral-client-python: Python client for Chiral Computing Cloud API
 
 ## Versions
+- 0.3.2 (client version 0.3.1): new scripts example of gromacs
 - 0.3.1: bug fix, ftp connection long idle
 - 0.3.0: for chiral service V2
 - 0.2.1: ReCGen for virtual molecular library; Large language model LLama2 from Meta;
