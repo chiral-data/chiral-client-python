@@ -18,7 +18,8 @@ def create_client_for_local_server() -> ChiralClient:
 def create_client_for_remote_server() -> ChiralClient:
     user_email = os.environ['CHIRAL_USER_EMAIL']
     token_api = os.environ['CHIRAL_TOKEN_API']
-    return ChiralClient(user_email, token_api, 'api.chiral.one:20000')
+    chiral_cloud_url = os.environ.get('CHIRAL_CLOUD_URL', 'api.chiral.one:20000')
+    return ChiralClient(user_email, token_api, chiral_cloud_url)
 
 
 def create_client(remote_dir: str, local_dir: str) -> Client:
@@ -122,8 +123,10 @@ def test_gromacs(local_dir: str):
         'pdb2gmx -f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce',
         '15 0', input_files, output_files, [], []
     )
+    print(f'Gromacs command job ID: {job_id}')
     assert len(job_id) > 0
     client.wait_until_completion(job_id)
+    print(f'Job {job_id} completed with status: {client.get_job_status(job_id)}')
     client.download_files(output_files)
     for filename in output_files:
         assert os.path.exists(
@@ -152,8 +155,10 @@ def test_gromacs(local_dir: str):
     output_files = ['confout.gro']
     client.upload_directory()
     job_id = client.submit_job_script('run.sh', [AppType.Gromacs], input_files, output_files, [], [])
+    print(f'Gromacs script job ID: {job_id}')
     assert len(job_id) > 0
     client.wait_until_completion(job_id)
+    print(f'Job {job_id} completed with status: {client.get_job_status(job_id)}')
     client.download_files(output_files)
     for filename in output_files:
         assert os.path.exists(
