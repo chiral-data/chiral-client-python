@@ -162,7 +162,8 @@ def test_gromacs(local_dir: str):
     client.remove_project_remote()
     # client.remove_project_local()
     client.remove_remote_dir('.', remote_dir)
-    print_test_gromacs('submit gromacs scripts job ... pass')
+    print_test_gromacs('submit gromacs script job ... pass')
+
 
 def test_long_idle(local_dir: str):
     print('Testing long idle ...')
@@ -210,12 +211,12 @@ def test_client():
 
     # test
     test_gromacs(test_dir)
-    # test_long_idle(test_dir)
+    test_long_idle(test_dir)
 
     # clean
     shutil.rmtree(test_dir)
 
 
 if __name__ == '__main__':
-    # test_ftp_client()
+    test_ftp_client()
     test_client()

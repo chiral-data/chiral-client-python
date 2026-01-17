@@ -119,7 +119,7 @@ class Client:
           files (list of str): List of file names without directory prefix.
         """
         with ftp_connect(self.ftp) as ftp:
-            remote_project_dir = os.path.join(self.remote_dir, self.project)
+            remote_project_dir = os.path.join(self.remote_dir, self.project).replace('\\', '/')
             ftp.ftp.cwd(remote_project_dir)
             local_project_dir = os.path.join(self.local_dir, self.project)
             for filename in files:
@@ -133,7 +133,7 @@ class Client:
           files (list of str): List of file names without directory prefix.
         """
         with ftp_connect(self.ftp) as ftp:
-            remote_project_dir = os.path.join(self.remote_dir, self.project)
+            remote_project_dir = os.path.join(self.remote_dir, self.project).replace('\\', '/')
             ftp.ftp.cwd(remote_project_dir)
             local_project_dir = os.path.join(self.local_dir, self.project)
             for filename in files:
