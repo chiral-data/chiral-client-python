@@ -55,7 +55,7 @@ def test_get_jobs():
 
 
 def test_submit_job():
-    """Test submitting a job."""
+    """Test submitting a simple job."""
     print('Testing submit_job...')
     client = create_client()
 
@@ -93,6 +93,79 @@ def test_submit_job():
     print('test_submit_job ... pass')
 
 
+def test_gromacs_pdb2gmx():
+    """Test gromacs pdb2gmx command job."""
+    print('Testing gromacs pdb2gmx...')
+    client = create_client()
+    data_dir = os.environ.get('CHIRAL_DATA_DIR', '')
+
+    project_name = 'test_gromacs_sdk'
+
+    # Create or use existing project
+    projects = client.list_projects()
+    if project_name not in projects:
+        print(f'Creating project: {project_name}')
+        client.create_project(project_name)
+
+    # Upload input file via FTP
+    input_file = '1AKI_clean.pdb'
+    input_path = os.path.join(data_dir, 'lysozyme', input_file)
+
+    ftp = client.create_ftp_client()
+    ftp.connect()
+    print(f'FTP connected to {client.ftp_addr}:{client.ftp_port}')
+
+    # Create project directory if needed
+    if ftp.path_exist(project_name).value == 0:  # NotExist
+        ftp.ftp.mkd(project_name)
+    ftp.ftp.cwd(project_name)
+
+    # Upload input file
+    if os.path.exists(input_path):
+        print(f'Uploading {input_file} via FTP...')
+        ftp.upload_file(os.path.join(data_dir, 'lysozyme'), input_file)
+    else:
+        print(f'Warning: {input_path} not found, using existing file in project')
+
+    ftp.disconnect()
+
+    # Submit gromacs pdb2gmx job
+    input_files = [input_file]
+    output_files = ['1AKI_processed.gro', 'topol.top', 'posre.itp']
+
+    job_id = client.submit_job(
+        app=AppKind.Gromacs,
+        command_str='pdb2gmx -f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce -ff oplsaa',
+        project_name=project_name,
+        input_files=input_files,
+        output_files=output_files
+    )
+    print(f'Gromacs pdb2gmx job ID: {job_id}')
+    assert len(job_id) > 0
+
+    # Wait for completion
+    print('Waiting for job completion...')
+    client.wait_until_completion(job_id)
+
+    # Check final status
+    job = client.get_job(job_id)
+    status = job.get('status', '')
+    print(f'Job {job_id} completed with status: {status}')
+
+    if status == 'Completed':
+        # List project files to verify outputs
+        files = client.list_project_files(project_name)
+        print(f'Project files: {files}')
+        for out_file in output_files:
+            if out_file in files:
+                print(f'  ✓ {out_file} exists')
+            else:
+                print(f'  ✗ {out_file} missing')
+        print('test_gromacs_pdb2gmx ... pass')
+    else:
+        print(f'test_gromacs_pdb2gmx ... job completed with status: {status}')
+
+
 def run_all_tests():
     """Run all tests."""
     print('=' * 50)
@@ -111,9 +184,9 @@ def run_all_tests():
     test_get_jobs()
     print()
 
-    # Uncomment to test job submission (requires worker)
-    # test_submit_job()
-    # print()
+    # Gromacs job test (requires worker and CHIRAL_DATA_DIR)
+    test_gromacs_pdb2gmx()
+    print()
 
     print('=' * 50)
     print('All tests passed!')

@@ -3,11 +3,13 @@ Chiral gRPC client using UserCommunicate protocol.
 """
 import typing
 import time
+import os
 import grpc
 
 from . import chiral_client_pb2
 from . import chiral_client_pb2_grpc
 from ..api_types import Request, Reply, AppKind
+from ..ftp import FtpClient, ftp_connect
 
 
 class ChiralClient:
@@ -18,7 +20,8 @@ class ChiralClient:
     """
 
     def __init__(self, email: str, token_auth: str, chiral_computing_url: str,
-                 options: typing.List[typing.Tuple[str, int]] = []):
+                 options: typing.List[typing.Tuple[str, int]] = [],
+                 ftp_port: int = None, user_id: str = None):
         self.channel = grpc.insecure_channel(chiral_computing_url, options=options)
         self.stub = chiral_client_pb2_grpc.ChiralStub(self.channel)
         self.metadata = (
@@ -28,8 +31,25 @@ class ChiralClient:
         self.user_email = email
         self.token_auth = token_auth
 
+        # FTP settings - addr is same as gRPC host, user_id is email
+        self.ftp_addr = chiral_computing_url.split(':')[0]
+        self.ftp_port = ftp_port or int(os.environ.get('CHIRAL_FTP_PORT', '2025'))
+        self.user_id = user_id or email
+
     def __del__(self):
         self.channel.close()
+
+    def create_ftp_client(self) -> FtpClient:
+        """Create an FTP client for file uploads/downloads."""
+        if not self.user_id:
+            raise ValueError('User ID not configured. Set CHIRAL_USER_ID or pass user_id.')
+        return FtpClient(
+            ftp_addr=self.ftp_addr,
+            ftp_port=self.ftp_port,
+            user_email=self.user_email,
+            token_api=self.token_auth,
+            user_id=self.user_id
+        )
 
     def _communicate(self, serialized_request: str) -> str:
         """
