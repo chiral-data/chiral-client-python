@@ -41,8 +41,9 @@ class ChiralClient:
 
     def create_ftp_client(self) -> FtpClient:
         """Create an FTP client for file uploads/downloads."""
-        if not self.user_id:
-            raise ValueError('User ID not configured. Set CHIRAL_USER_ID or pass user_id.')
+        # Fetch user_id from API if not already set
+        if not self.user_id or self.user_id == self.user_email:
+            self.user_id = self.get_user_id()
         return FtpClient(
             ftp_addr=self.ftp_addr,
             ftp_port=self.ftp_port,
@@ -67,6 +68,13 @@ class ChiralClient:
             raise Exception(f'API error: {reply.error}')
 
         return reply.serialized_reply
+
+    # User ID
+    def get_user_id(self) -> str:
+        """Get the database user ID for the current user."""
+        req = Request.get_user_id()
+        reply = self._communicate(req)
+        return Reply.get_user_id(reply)
 
     # Credit Points
     def get_credit_points(self) -> float:
@@ -137,19 +145,30 @@ class ChiralClient:
         reply = self._communicate(req)
         return Reply.submit_job_from_potter(reply)
 
-    def wait_until_completion(self, job_id: str, poll_interval: float = 1.0):
+    def wait_until_completion(self, job_id: str, poll_interval: float = 1.0, timeout: float = None, verbose: bool = False) -> str:
         """
         Wait until a job completes.
 
         Args:
             job_id: The job ID to wait for
             poll_interval: Seconds between status checks
+            timeout: Maximum seconds to wait (None = wait indefinitely)
+            verbose: Print job status on each poll
+
+        Returns:
+            Final job status string
         """
+        start_time = time.time()
         while True:
             job = self.get_job(job_id)
             status = job.get('status', '')
+            if verbose:
+                elapsed = time.time() - start_time
+                print(f'[{elapsed:.1f}s] Job {job_id}: {status}')
             if status in ['Completed', 'CompletedWithError', 'Canceled']:
-                break
+                return status
+            if timeout is not None and (time.time() - start_time) >= timeout:
+                return status  # Return current status on timeout
             time.sleep(poll_interval)
 
     # Projects

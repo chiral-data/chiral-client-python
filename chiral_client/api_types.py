@@ -35,6 +35,10 @@ class Request:
     """Base class for API requests. Serializes to JSON matching Rust serde format."""
 
     @staticmethod
+    def get_user_id() -> str:
+        return json.dumps("GetUserId")
+
+    @staticmethod
     def get_credit_points() -> str:
         return json.dumps("GetCreditPoints")
 
@@ -143,6 +147,13 @@ class Reply:
             return (key, data[key])
 
         raise ValueError(f"Unknown reply format: {data}")
+
+    @staticmethod
+    def get_user_id(serialized_reply: str) -> str:
+        reply_type, data = Reply.parse(serialized_reply)
+        if reply_type != "GetUserId":
+            raise ValueError(f"Expected GetUserId reply, got {reply_type}")
+        return str(data)
 
     @staticmethod
     def get_credit_points(serialized_reply: str) -> float:
