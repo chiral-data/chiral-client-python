@@ -243,13 +243,17 @@ class Client:
         """
         self.chiral.get_log_files(job_id)
 
-    def wait_until_completion(self, job_id: str):
+    def wait_until_completion(self, job_id: str, timeout: float = None, verbose: bool = False) -> str:
         """
         Check the job status and wait until the job is completed, either with success or with error.
         Parameters:
           job_id (str): The ID of the job.
+          timeout (float): Maximum seconds to wait (None = wait indefinitely).
+          verbose (bool): Print job status on each poll.
+        Returns:
+          str: Final job status.
         """
-        self.chiral.wait_until_completion(job_id=job_id)
+        return self.chiral.wait_until_completion(job_id=job_id, timeout=timeout, verbose=verbose)
 
     def check_credit_points(self) -> float:
         """
