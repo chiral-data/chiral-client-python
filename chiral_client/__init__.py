@@ -1,4 +1,7 @@
-version = "0.3.1"
+version = "0.4.0"
 
-from .app_type import AppType
-from .client import Client 
+from .api_types import AppKind, Request, Reply
+from .chiral import ChiralClient
+
+# Backward compatibility aliases
+AppType = AppKind

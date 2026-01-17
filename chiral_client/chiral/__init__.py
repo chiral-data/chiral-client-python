@@ -1,112 +1,207 @@
+"""
+Chiral gRPC client using UserCommunicate protocol.
+"""
 import typing
 import time
 import grpc
-import pathlib
-from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 
-from . import chiral_pb2
-from . import chiral_pb2_grpc
-from ..ftp import FtpClient
+from . import chiral_client_pb2
+from . import chiral_client_pb2_grpc
+from ..api_types import Request, Reply, AppKind
+
 
 class ChiralClient:
-    def __init__(self, email: str, token_api: str, chiral_computing_url: str, options: typing.List[typing.Tuple[str, int]] = []):
-        self.channel = grpc.insecure_channel(chiral_computing_url, options = options)
-        self.stub = chiral_pb2_grpc.ChiralStub(self.channel)
+    """
+    Client for Chiral Cloud API using the UserCommunicate protocol.
+
+    All requests are serialized as JSON and sent via a single gRPC method.
+    """
+
+    def __init__(self, email: str, token_auth: str, chiral_computing_url: str,
+                 options: typing.List[typing.Tuple[str, int]] = []):
+        self.channel = grpc.insecure_channel(chiral_computing_url, options=options)
+        self.stub = chiral_client_pb2_grpc.ChiralStub(self.channel)
         self.metadata = (
             ('user_id', email),
-            ('auth_token', token_api)
+            ('auth_token', token_auth)
         )
         self.user_email = email
-        self.token_api = token_api
-
-    def create_ftp_client(self) -> FtpClient:
-        reply = self.stub.UserInitialize(chiral_pb2.RequestUserInitialize(), metadata=self.metadata)
-        if reply.error:
-            raise Exception(f'Client auth error: {reply.error}')
-        else:
-            ftp_addr = reply.settings['ftp_addr']
-            ftp_port = int(reply.settings['ftp_port'])
-            user_id = reply.settings['user_id']
-            ftp = FtpClient(ftp_addr=ftp_addr, ftp_port=ftp_port, user_email=self.user_email, token_api=self.token_api, user_id=user_id)
-            ftp.connect()
-            return ftp
+        self.token_auth = token_auth
 
     def __del__(self):
         self.channel.close()
 
-    def submit_job_shell_scripts(self,
-        work_dir: str,
-        proj_name: str,
-        script_file: str,
-        apps: typing.List[chiral_pb2.AppType],
-        prompts: typing.List[str],
-        input_files: typing.List[str],
-        output_files: typing.List[str],
-        checkpoint_files: typing.List[str],
-        log_files: typing.List[str]
-    ) -> str:
-        job_command = chiral_pb2.JobCommand(work_dir=work_dir, proj_name=proj_name, is_long=True, args=[script_file], prompts=prompts, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
-        job_scripts = chiral_pb2.JobScript(command=job_command, script_file=script_file, apps=apps)
-        request = chiral_pb2.RequestUserSubmitAppJob(script=job_scripts)
-        reply = self.stub.UserSubmitAppJob(request, metadata = self.metadata)
+    def _communicate(self, serialized_request: str) -> str:
+        """
+        Send a request via UserCommunicate and return the serialized reply.
 
-        if reply.success:
-            return reply.job_id
-        else:
-            raise Exception(f'submit shell scripts job error: {reply.error}')
+        Raises:
+            Exception: If the request fails
+        """
+        request = chiral_client_pb2.RequestUserCommunicate(
+            serialized_request=serialized_request
+        )
+        reply = self.stub.UserCommunicate(request, metadata=self.metadata)
 
-    def submit_gromacs_job(self, is_long: bool,
-        work_dir: str,
-        proj_name: str,
-        args: typing.List[str],
-        prompts: typing.List[str],
-        input_files: typing.List[str],
-        output_files: typing.List[str],
-        checkpoint_files: typing.List[str],
-        log_files: typing.List[str]
-    ) -> str:
-        job_gromacs = chiral_pb2.JobCommand(work_dir=work_dir, proj_name=proj_name, is_long=is_long, args=args, prompts=prompts, input_files=input_files, output_files=output_files, checkpoint_files=checkpoint_files, log_files=log_files)
-        reply = self.stub.UserSubmitAppJob(chiral_pb2.RequestUserSubmitAppJob(gromacs=job_gromacs), metadata = self.metadata)
+        if not reply.success:
+            raise Exception(f'API error: {reply.error}')
 
-        if reply.success:
-            return reply.job_id
-        else:
-            raise Exception(f'submit gromacs job error: {reply.error}')
+        return reply.serialized_reply
 
-    def send_monitor_action(self,
-        job_id: str,
-        monitor_action_type: chiral_pb2.MonitorActionType
-    ) -> chiral_pb2.MonitorActionReply:
-        request = chiral_pb2.RequestUserSendMonitorAction(job_id, monitor_action_type)
-        reply = self.stub.UserSendMonitorAction(request, metadata = self.metadata)
-        if reply.success:
-            return reply.reply
-        else:
-            raise Exception(f'send monitor action error: {reply.error}')
+    # Credit Points
+    def get_credit_points(self) -> float:
+        """Get the credit points balance for the current user."""
+        req = Request.get_credit_points()
+        reply = self._communicate(req)
+        return Reply.get_credit_points(reply)
+
+    # Token API
+    def get_token_api(self) -> str:
+        """Get the API token for the current user."""
+        req = Request.get_token_api()
+        reply = self._communicate(req)
+        return Reply.get_token_api(reply)
+
+    def refresh_token_api(self) -> str:
+        """Refresh and get a new API token."""
+        req = Request.refresh_token_api()
+        reply = self._communicate(req)
+        return Reply.refresh_token_api(reply)
+
+    # Jobs
+    def submit_test_job(self, job_type_name: str, index: int) -> str:
+        """Submit a test job and return the job ID."""
+        req = Request.submit_test_job(job_type_name, index)
+        reply = self._communicate(req)
+        return Reply.submit_test_job(reply)
+
+    def get_jobs(self, offset: int = 0, count_per_page: int = 20) -> typing.List[typing.Dict]:
+        """Get a list of jobs for the current user."""
+        req = Request.get_jobs(offset, count_per_page)
+        reply = self._communicate(req)
+        return Reply.get_jobs(reply)
+
+    def get_job(self, job_id: str) -> typing.Dict:
+        """Get details of a specific job."""
+        req = Request.get_job(job_id)
+        reply = self._communicate(req)
+        return Reply.get_job(reply)
+
+    def submit_job(self, app: AppKind, command_str: str, project_name: str,
+                   input_files: typing.List[str], output_files: typing.List[str]) -> str:
+        """
+        Submit a job and return the job ID.
+
+        Args:
+            app: The application to run (e.g., AppKind.Gromacs)
+            command_str: The command string to execute
+            project_name: Name of the project
+            input_files: List of input file names
+            output_files: List of output file names
+
+        Returns:
+            The job ID
+        """
+        req = Request.submit_job(app, command_str, project_name, input_files, output_files)
+        reply = self._communicate(req)
+        return Reply.submit_job(reply)
 
     def cancel_job(self, job_id: str):
-        reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_CANCEL), metadata=self.metadata)
-        if not reply.success:
-            raise Exception(f'cancel job error: {reply.error}')
+        """Cancel a job."""
+        req = Request.cancel_job(job_id)
+        self._communicate(req)
 
-    def get_log_files(self, job_id: str):
-        reply = self.stub.UserSendMonitorAction(chiral_pb2.RequestUserSendMonitorAction(job_id=job_id, action_type=chiral_pb2.MAT_GET_DETAILS), metadata=self.metadata)
-        if not reply.success:
-            raise Exception(f'cancel job error: {reply.error}')
+    def submit_job_from_potter(self, config_json_str: str) -> str:
+        """Submit a job using Potter configuration."""
+        req = Request.submit_job_from_potter(config_json_str)
+        reply = self._communicate(req)
+        return Reply.submit_job_from_potter(reply)
 
-    def get_job_status(self, job_ids: typing.List[str]) -> typing.Dict[str, typing.Any]:
-        return self.stub.UserGetJobStatus(chiral_pb2.RequestUserGetJobStatus(job_ids=job_ids), metadata=self.metadata).statuses
+    def wait_until_completion(self, job_id: str, poll_interval: float = 1.0):
+        """
+        Wait until a job completes.
 
-    def wait_until_completion(self, job_id: str):
+        Args:
+            job_id: The job ID to wait for
+            poll_interval: Seconds between status checks
+        """
         while True:
-            job_statuses = self.get_job_status([job_id])
-            if job_id in job_statuses and job_statuses[job_id] in ['"Completed"', '"CompletedWithError"', '"Canceled"']:
+            job = self.get_job(job_id)
+            status = job.get('status', '')
+            if status in ['Completed', 'CompletedWithError', 'Canceled']:
                 break
-            time.sleep(0.5)
+            time.sleep(poll_interval)
 
-    def check_credit_points(self) -> float:
-        reply = self.stub.UserGetCreditPoints(chiral_pb2.RequestUserGetCreditPoints(), metadata = self.metadata)
-        if reply.success:
-            return reply.points
-        else:
-            raise Exception(f'check user credit points error: {reply.error}')
+    # Projects
+    def list_projects(self) -> typing.List[str]:
+        """List all projects for the current user."""
+        req = Request.list_of_projects()
+        reply = self._communicate(req)
+        return Reply.list_of_projects(reply)
+
+    def create_project(self, project_name: str):
+        """Create a new project."""
+        req = Request.create_project(project_name)
+        self._communicate(req)
+
+    def delete_project(self, project_name: str):
+        """Delete a project."""
+        req = Request.delete_project(project_name)
+        self._communicate(req)
+
+    def list_example_projects(self) -> typing.List[str]:
+        """List available example projects."""
+        req = Request.list_of_example_projects()
+        reply = self._communicate(req)
+        return Reply.list_of_example_projects(reply)
+
+    def import_example_project(self, project_name: str):
+        """Import an example project."""
+        req = Request.import_example_project(project_name)
+        self._communicate(req)
+
+    def import_example_files(self, project_name: str):
+        """Import example files into a project."""
+        req = Request.import_example_files(project_name)
+        self._communicate(req)
+
+    # Project Files
+    def list_project_files(self, project_name: str) -> typing.List[str]:
+        """List files in a project."""
+        req = Request.list_of_project_files(project_name)
+        reply = self._communicate(req)
+        return Reply.list_of_project_files(reply)
+
+    def list_files_and_folders(self, project_name: str,
+                                child_folders: typing.List[str] = []) -> typing.List[typing.Tuple[str, str]]:
+        """
+        List files and folders in a project directory.
+
+        Returns:
+            List of (name, type) tuples where type is 'file' or 'folder'
+        """
+        req = Request.list_files_and_folders(project_name, child_folders)
+        reply = self._communicate(req)
+        return Reply.list_files_and_folders(reply)
+
+    def get_project_file(self, project_name: str, file_name: str) -> bytes:
+        """Get the contents of a project file."""
+        req = Request.get_project_file(project_name, file_name)
+        reply = self._communicate(req)
+        return Reply.get_project_file(reply)
+
+    def write_project_file(self, project_name: str, file_name: str, content: str):
+        """Write content to a project file."""
+        req = Request.write_project_file(project_name, file_name, content)
+        self._communicate(req)
+
+    def delete_project_file_or_folder(self, project_name: str, name: str):
+        """Delete a file or folder from a project."""
+        req = Request.delete_project_file_or_folder(project_name, name)
+        self._communicate(req)
+
+    # Payment
+    def confirm_payment(self, order_id: str, access_id: str, amount: int):
+        """Confirm a payment."""
+        req = Request.confirm_payment(order_id, access_id, amount)
+        self._communicate(req)

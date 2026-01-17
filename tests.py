@@ -1,227 +1,124 @@
+"""
+Tests for Chiral Python SDK using UserCommunicate API.
+"""
 import os
-import shutil
-from time import sleep
-
-from chiral_client.chiral import ChiralClient
-from chiral_client.ftp import PathType
-from chiral_client.app_type import AppType
-from chiral_client import Client
+from chiral_client import ChiralClient, AppKind
 
 
-def create_client_for_local_server() -> ChiralClient:
+def create_client() -> ChiralClient:
+    """Create a ChiralClient from environment variables."""
     user_email = os.environ['CHIRAL_USER_EMAIL']
-    user_token_api = os.environ['CHIRAL_TOKEN_API']
-    chiral_cloud_url = os.environ['CHIRAL_CLOUD_URL']
-    return ChiralClient(user_email, user_token_api, chiral_cloud_url)
-
-
-def create_client_for_remote_server() -> ChiralClient:
-    user_email = os.environ['CHIRAL_USER_EMAIL']
-    token_api = os.environ['CHIRAL_TOKEN_API']
+    token_auth = os.environ['CHIRAL_TOKEN_API']
     chiral_cloud_url = os.environ.get('CHIRAL_CLOUD_URL', 'api.chiral.one:20000')
-    return ChiralClient(user_email, token_api, chiral_cloud_url)
+    print(f'Connecting to {chiral_cloud_url} as {user_email}')
+    return ChiralClient(user_email, token_auth, chiral_cloud_url)
 
 
-def create_client(remote_dir: str, local_dir: str) -> Client:
-    user_email = os.environ['CHIRAL_USER_EMAIL']
-    token_api = os.environ['CHIRAL_TOKEN_API']
-    chiral_computing_url = os.environ['CHIRAL_CLOUD_URL']
-    print(f'Testing on {chiral_computing_url} with user {user_email} and token {token_api}')
-    return Client(
-        user_email, token_api, remote_dir,
-        local_dir, chiral_computing_url
+def test_get_credit_points():
+    """Test getting credit points."""
+    print('Testing get_credit_points...')
+    client = create_client()
+    points = client.get_credit_points()
+    print(f'Credit points: {points}')
+    assert isinstance(points, float)
+    print('test_get_credit_points ... pass')
+
+
+def test_list_projects():
+    """Test listing projects."""
+    print('Testing list_projects...')
+    client = create_client()
+    projects = client.list_projects()
+    print(f'Projects: {projects}')
+    assert isinstance(projects, list)
+    print('test_list_projects ... pass')
+
+
+def test_list_example_projects():
+    """Test listing example projects."""
+    print('Testing list_example_projects...')
+    client = create_client()
+    projects = client.list_example_projects()
+    print(f'Example projects: {projects}')
+    assert isinstance(projects, list)
+    print('test_list_example_projects ... pass')
+
+
+def test_get_jobs():
+    """Test getting jobs."""
+    print('Testing get_jobs...')
+    client = create_client()
+    jobs = client.get_jobs()
+    print(f'Found {len(jobs)} jobs')
+    assert isinstance(jobs, list)
+    print('test_get_jobs ... pass')
+
+
+def test_submit_job():
+    """Test submitting a job."""
+    print('Testing submit_job...')
+    client = create_client()
+
+    # First, ensure we have a project
+    projects = client.list_projects()
+    if not projects:
+        print('Creating test project...')
+        client.create_project('test_sdk')
+        projects = ['test_sdk']
+
+    project_name = projects[0]
+    print(f'Using project: {project_name}')
+
+    # Submit a simple gromacs job
+    job_id = client.submit_job(
+        app=AppKind.Gromacs,
+        command_str='gmx --version',
+        project_name=project_name,
+        input_files=[],
+        output_files=[]
     )
-
-
-def create_file(filename: str, local_dir: str):
-    with open(f'{local_dir}/{filename}', 'w') as f:
-        f.writelines(f'this is file {filename}')
-        f.close()
-
-
-def remove_file(filename: str, local_dir: str):
-    full_path = f'{local_dir}/{filename}'
-    if os.path.exists(full_path):
-        os.remove(full_path)
-
-
-def test_ftp_client():
-    def print_ftp_client(msg: str):
-        print(f'testing FtpClient {msg}')
-
-    # client = create_client_for_local_server()
-    client = create_client_for_remote_server()
-    ftp = client.create_ftp_client()
-    ftp.connect()
-    assert ftp.root_dir == f'/{ftp.user_id}'
-    print_ftp_client('connect ... test pass')
-    ftp.disconnect()
-    print_ftp_client('disonnect ... test pass')
-    # assert ftp.root_dir == None
-    # ftp.cwd_root()
-    # assert ftp.root_dir == f'/{ftp.user_id}'
-    # print_ftp_client(f'cwd_root ... test pass')
-    ftp.connect()
-    parent_dir = 'parent_dir'
-    child_dir = 'child_dir'
-    test_filename_1 = '1.txt'
-    test_filename_2 = '2.txt'
-    create_file(test_filename_1, '.')
-    ftp.ftp.mkd(parent_dir)
-    ftp.ftp.cwd(parent_dir)
-    ftp.upload_file('.', test_filename_1)
-    ftp.ftp.mkd(child_dir)
-    ftp.ftp.cwd(child_dir)
-    ftp.upload_file('.', test_filename_1)
-    ftp.cwd_root()
-    assert ftp.path_exist(parent_dir) == PathType.Directory
-    assert ftp.path_exist(child_dir) == PathType.NotExist
-    assert ftp.path_exist(test_filename_1) == PathType.NotExist
-    assert ftp.path_exist(test_filename_2) == PathType.NotExist
-    ftp.ftp.cwd(parent_dir)
-    assert ftp.path_exist(parent_dir) == PathType.NotExist
-    assert ftp.path_exist(child_dir) == PathType.Directory
-    assert ftp.path_exist(test_filename_1) == PathType.File
-    assert ftp.path_exist(test_filename_2) == PathType.NotExist
-    os.remove(test_filename_1)
-    print_ftp_client('path_exist ... test pass')
-    assert not os.path.exists(test_filename_1)
-    ftp.cwd_root()
-    ftp.ftp.cwd(parent_dir)
-    ftp.download_file('.', test_filename_1)
-    assert os.path.exists(test_filename_1)
-    os.remove(test_filename_1)
-    print_ftp_client('download_file ... test pass')
-    ftp.cwd_root()
-    ftp.remove_dir_recursively(parent_dir)
-    assert ftp.path_exist(parent_dir) == PathType.NotExist
-    print_ftp_client('remove_dir_all ... test pass')
-
-
-def test_gromacs(local_dir: str):
-    def print_test_gromacs(msg: str):
-        print(f'testing Gromacs {msg}')
-
-    remote_dir = 'gromacs'
-    client = create_client(remote_dir, local_dir)
-    data_dir = os.environ["CHIRAL_DATA_DIR"]
-
-    # test gromacs command job
-    project = 'lysozyme'
-    client.set_project(project)
-    client.create_project_remote()
-    if not os.path.exists(os.path.join(client.local_dir, project)):
-        os.mkdir(os.path.join(client.local_dir, project))
-    shutil.copyfile(
-        os.path.join(data_dir, project, '1AKI_clean.pdb'),
-        os.path.join(client.local_dir, project, '1AKI_clean.pdb')
-    )
-    input_files = ['1AKI_clean.pdb']
-    output_files = ["1AKI_processed.gro", "topol.top", "posre.itp"]
-    client.upload_files(input_files)
-    job_id = client.submit_job_gromacs(
-        'pdb2gmx -f 1AKI_clean.pdb -o 1AKI_processed.gro -water spce',
-        '15 0', input_files, output_files, [], []
-    )
-    print(f'Gromacs command job ID: {job_id}')
+    print(f'Submitted job: {job_id}')
     assert len(job_id) > 0
+
+    # Get job status
+    job = client.get_job(job_id)
+    print(f'Job status: {job.get("status")}')
+
+    # Wait for completion (with timeout)
+    print('Waiting for job completion...')
     client.wait_until_completion(job_id)
-    print(f'Job {job_id} completed with status: {client.get_job_status(job_id)}')
-    client.download_files(output_files)
-    for filename in output_files:
-        assert os.path.exists(
-            os.path.join(client.local_dir, project, filename)
-        )
-    client.remove_project_remote()
-    # client.remove_project_local()
-    print_test_gromacs('submit gromacs command job ... pass')
 
-    # test gromacs script job
-    project = 'benchmark'
-    client.set_project(project)
-    client.create_project_remote()
-    if not os.path.exists(os.path.join(client.local_dir, project)):
-        os.mkdir(os.path.join(client.local_dir, project))
-    input_file = 'benchMEM.tpr'
-    shutil.copyfile(
-        os.path.join(data_dir, project, input_file),
-        os.path.join(client.local_dir, project, input_file)
-    )
-    with open(os.path.join(client.local_dir, project, 'run.sh'), 'w') as f:
-        f.write(f'gmx mdrun -s {input_file} -nb gpu -nsteps 500')
-        f.close()
-
-    input_files = [input_file]
-    output_files = ['confout.gro']
-    client.upload_directory()
-    job_id = client.submit_job_script('run.sh', [AppType.Gromacs], input_files, output_files, [], [])
-    print(f'Gromacs script job ID: {job_id}')
-    assert len(job_id) > 0
-    client.wait_until_completion(job_id)
-    print(f'Job {job_id} completed with status: {client.get_job_status(job_id)}')
-    client.download_files(output_files)
-    for filename in output_files:
-        assert os.path.exists(
-            os.path.join(client.local_dir, project, filename)
-        )
-    client.remove_project_remote()
-    # client.remove_project_local()
-    client.remove_remote_dir('.', remote_dir)
-    print_test_gromacs('submit gromacs script job ... pass')
+    job = client.get_job(job_id)
+    print(f'Final job status: {job.get("status")}')
+    print('test_submit_job ... pass')
 
 
-def test_long_idle(local_dir: str):
-    print('Testing long idle ...')
-    # setup
-    remote_dir = 'gromacs'
-    test_project = 'long_idle'
-    test_files = ['1.txt', '2.txt']
-    curdir = os.getcwd()
-    os.chdir(local_dir)
-    os.mkdir(test_project)
-    os.chdir(test_project)
-    for f in test_files:
-        create_file(f, '.')
-    os.chdir(curdir)
+def run_all_tests():
+    """Run all tests."""
+    print('=' * 50)
+    print('Chiral SDK Tests (UserCommunicate API)')
+    print('=' * 50)
 
-    # test starts
-    client = create_client(remote_dir, local_dir)
-    client.set_project(test_project)
-    client.create_project_remote()
-    client.upload_files(test_files)
-    for f in test_files:
-        os.remove(os.path.join(local_dir, test_project, f))
+    test_get_credit_points()
+    print()
 
-    for i in range(5):
-        # sleep(3600)
-        sleep(3)
-        client.download_files(test_files)
-        for f in test_files:
-            local_file = os.path.join(local_dir, test_project, f)
-            assert os.path.exists(local_file)
-            os.remove(local_file)
-        print(f'Testing long idle {i} hour(s) ... pass')
+    test_list_projects()
+    print()
 
-    client.remove_project_remote()
-    client.remove_project_local()
-    print('Testing long idle ... pass')
+    test_list_example_projects()
+    print()
 
+    test_get_jobs()
+    print()
 
-def test_client():
-    # setup
-    test_dir = 'test_client'
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
-    os.mkdir(test_dir)
+    # Uncomment to test job submission (requires worker)
+    # test_submit_job()
+    # print()
 
-    # test
-    test_gromacs(test_dir)
-    test_long_idle(test_dir)
-
-    # clean
-    shutil.rmtree(test_dir)
+    print('=' * 50)
+    print('All tests passed!')
+    print('=' * 50)
 
 
 if __name__ == '__main__':
-    test_ftp_client()
-    test_client()
+    run_all_tests()
