@@ -78,48 +78,6 @@ class Client:
         If the remote project directory exists, it will be renamed with a sequential number.
         """
 
-    def submit_job_gromacs(self,
-        args: str,
-        prompts: str,
-        input_files: typing.List[str],
-        output_files: typing.List[str],
-        checkpoint_files: typing.List[str],
-        log_files: typing.List[str]
-    ) -> str:
-        """
-        Submit a job of a Gromacs command.
-        Parameters:
-          args (str): The argument string.
-          prompts (str): The prompts to be input, separated by space in a string.
-          input_files (list of str): Files to be downloaded by the computing server before starting the computation.
-          output_files (list of str): Files to be uploaded to the remote storage after the completion of the computation.
-          checkpoint_files (list of str): Files to be uploaded to the remote storage every 1 hour.
-          log_files (list of str): Extra log files in addition to job_id.out and job_id.err.
-        Returns:
-          str: A string representing the ID of the job.
-        """
-
-    def submit_job_script(self,
-        script_file: str,
-        apps: typing.List[AppType],
-        input_files: typing.List[str],
-        output_files: typing.List[str],
-        checkpoint_files: typing.List[str],
-        log_files: typing.List[str]
-    ) -> str:
-        """
-        Submit a job to run a script file.
-        Parameters:
-          script_file (str): The name of the script file.
-          apps (str): Applications required by the script file.
-          input_files (list of str): Files to be downloaded by the computing server before starting the computation.
-          output_files (list of str): Files to be uploaded to the remote storage after the completion of the computation.
-          checkpoint_files (list of str): Files to be uploaded to the remote storage every 1 hour.
-          log_files (list of str): Extra log files in addition to job_id.out and job_id.err.
-        Returns:
-          str: A string representing the ID of the job.
-        """
-
     def cancel_job(self, job_id: str):
         """
         Cancel a job.

@@ -2,8 +2,6 @@
 include = ["."]
 exclude = [
     "**/__pycache__",
-    "chiral_client/client/chiral_pb2.*",
-    "chiral_client/client/chiral_pb2_grpc.py",
 ]
 ignore = ["src/oldstuff"]
 
